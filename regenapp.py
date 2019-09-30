@@ -55,7 +55,7 @@ def ScriptMain():
     
     dataTable1 = dt.DataTable(
         id='datatable-interactivity',
-        columns=[{'id': c, 'name': c} for c in ["Trade","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']],
+        columns=[{'id': c, 'name': c} for c in ["Trade","Min Cost/M2(Â£)","Mean Cost/M2(Â£)","Max Cost/M2(Â£)","Min Cost/Plot(Â£)","Mean Cost/Plot(Â£)","Max Cost/Plot(Â£)",'Input Value']],
         sort_action='native',
         editable = True,
         style_data_conditional=[
@@ -65,37 +65,37 @@ def ScriptMain():
         },
         {   
             'if': {
-                'column_id': 'Min Cost/M2(£)',
+                'column_id': 'Min Cost/M2(Â£)',
                     },
             'backgroundColor': '#FAEBD7'
         },
         {   
             'if': {
-                'column_id': 'Mean Cost/M2(£)',
+                'column_id': 'Mean Cost/M2(Â£)',
                     },
             'backgroundColor': '#FAEBD7'
         },
         {   
             'if': {
-                'column_id': 'Max Cost/M2(£)',
+                'column_id': 'Max Cost/M2(Â£)',
                     },
             'backgroundColor': '#FAEBD7'
         },
                     {   
             'if': {
-                'column_id': 'Min Cost/Plot(£)',
+                'column_id': 'Min Cost/Plot(Â£)',
                     },
             'backgroundColor': '#97FFFF'
         },
         {   
             'if': {
-                'column_id': 'Mean Cost/Plot(£)',
+                'column_id': 'Mean Cost/Plot(Â£)',
                     },
             'backgroundColor': '#97FFFF'
         },
         {   
             'if': {
-                'column_id': 'Max Cost/Plot(£)',
+                'column_id': 'Max Cost/Plot(Â£)',
                     },
             'backgroundColor': '#97FFFF'
         }
@@ -874,7 +874,7 @@ def ScriptMain():
         #df = df[df.Position != 0]
         df = df.groupby("Trade",as_index=False).agg({'Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
         df["Input Value"] = [0]*len(df)
-        df.columns  = ["Trade","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']
+        df.columns  = ["Trade","Min Cost/M2(Â£)","Mean Cost/M2(Â£)","Max Cost/M2(Â£)","Min Cost/Plot(Â£)","Mean Cost/Plot(Â£)","Max Cost/Plot(Â£)",'Input Value']
         df = df.round(0)    
         
         dat = df.to_dict('records')
@@ -930,14 +930,14 @@ def ScriptMain():
         
         flag = []
         for i in range(0,len(df1)):
-            if (float(df1['Quoted Cost/M2'][i]) < float(df["Min Cost/M2(£)"][i]) or float(df1['Quoted Cost/M2'][i]) > float(df["Max Cost/M2(£)"][i])):
+            if (float(df1['Quoted Cost/M2'][i]) < float(df["Min Cost/M2(Â£)"][i]) or float(df1['Quoted Cost/M2'][i]) > float(df["Max Cost/M2(Â£)"][i])):
                 flag.append("Out of Range")
             else:
                 flag.append("OK")
         
         flag2 = []
         for j in range(0,len(df1)):
-            if (float(df1['Quoted Cost/Plot'][j]) < float(df["Min Cost/Plot(£)"][j]) or float(df1['Quoted Cost/Plot'][j]) > float(df["Max Cost/Plot(£)"][j])):
+            if (float(df1['Quoted Cost/Plot'][j]) < float(df["Min Cost/Plot(Â£)"][j]) or float(df1['Quoted Cost/Plot'][j]) > float(df["Max Cost/Plot(Â£)"][j])):
                 flag2.append("Out of Range")
             else:
                 flag2.append("OK")
@@ -1574,4 +1574,5 @@ def ScriptMain():
 ScriptMain()
 #%%
 
-
+fig = px.line(e_vis, x='Date Created', y=' Order Cost')
+fig.show()
