@@ -13,7 +13,7 @@ import datetime
 ########### Import data
 
 url1 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/eset.csv'
-url2 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/eVis.csv'
+url2 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/EVis.csv'
 
 e_set = pd.read_csv(url1,na_values=['#VALUE!', '#DIV/0!'])
 e_vis = pd.read_csv(url2)  
