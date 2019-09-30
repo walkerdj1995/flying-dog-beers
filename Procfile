@@ -1,1 +1,1 @@
-web: gunicorn regenapp:server
+web: gunicorn app:server
