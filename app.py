@@ -6,7 +6,8 @@ import plotly.graph_objs as go
 ########### test import 
 
 import pandas as pd
-e_set = pd.read_csv("eset.csv",na_values=['#VALUE!', '#DIV/0!'])
+url = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/eset.csv'
+e_set = pd.read_csv(url,na_values=['#VALUE!', '#DIV/0!'])
 
 ########### Define your variables
 beers=['Chesapeake Stout', 'Snake Dog IPA', 'Imperial Porter', 'Double Dog IPA']
