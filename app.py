@@ -3,6 +3,11 @@ import dash_core_components as dcc
 import dash_html_components as html
 import plotly.graph_objs as go
 
+########### test import 
+
+import pandas as pd
+e_set = pd.read_csv("eset.csv",na_values=['#VALUE!', '#DIV/0!'])
+
 ########### Define your variables
 beers=['Chesapeake Stout', 'Snake Dog IPA', 'Imperial Porter', 'Double Dog IPA']
 ibu_values=[35, 60, 85, 75]
