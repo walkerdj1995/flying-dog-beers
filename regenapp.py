@@ -53,6 +53,7 @@ x = 0
 
 external_stylesheets = ['https://codepen.io/chriddyp/pen/bWLwgP.css']
 app = dash.Dash(__name__, external_stylesheets=[dbc.themes.BOOTSTRAP])
+server = app.server
 
 def ScriptMain():
     
@@ -1575,7 +1576,3 @@ def ScriptMain():
       
     
 ScriptMain()
-#%%
-
-fig = px.line(e_vis, x='Date Created', y=' Order Cost')
-fig.show()
