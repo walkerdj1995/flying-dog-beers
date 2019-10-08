@@ -6,6 +6,7 @@ Created on Tue Aug  6 09:32:06 2019
 """
 
 import pandas as pd
+import numpy as np
 import dash
 import dash_core_components as dcc
 import dash_html_components as html
@@ -59,7 +60,7 @@ def ScriptMain():
     
     dataTable1 = dt.DataTable(
         id='datatable-interactivity',
-        columns=[{'id': c, 'name': c} for c in ["Trade","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']],
+        columns=[{'id': c, 'name': c} for c in ["Trade","Number of Jobs","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']],
         sort_action='native',
         editable = True,
         style_data_conditional=[
@@ -176,7 +177,7 @@ def ScriptMain():
     
     dataTable3 = dt.DataTable(
         id='tab3',
-        columns=[{'id': c, 'name': c} for c in ['Contractor','Enquiry_Sent',"Price_Returned","First","Top_three","% Return Rate"]],
+        columns=[{'id': c, 'name': c} for c in ['Contractor','Enquiry_Sent',"Price_Returned","% Return Rate","First","Top_three"]],
         sort_action='native',
         filter_action="native",
         row_selectable="multi",
@@ -231,12 +232,15 @@ def ScriptMain():
                     html.Label("Trade"),
                     dcc.Dropdown(id = 'trade choice',
         					options=[
-               					{'label': i, 'value': i} for i in list(e_set.Trade.unique())
+               					{'label': i, 'value': i} for i in list(np.append(e_set.Trade.unique(),'Key Trades'))
             						],
             					placeholder="Select a Trade",
-        						value = "***F_LO Brickwork",
+        						value = "Key Trades",
                                 multi=True
-        						)],
+        						),
+                    dcc.RadioItems(id='select-all-tr',
+                            options=[{'label': 'Select Key Trades', 'value': 'keytr'},
+                                     {'label': 'Reset', 'value': 'settr'}])],
                     align = "center",
                     
                     width = {'size':4}),
@@ -335,7 +339,7 @@ def ScriptMain():
                     style = {'padding':30}),
                     
              dbc.Row([
-                    dbc.Col([html.H2("Summary of Costs",style={'textAlign':'center'}),dataTable1],width=7,align='end'),
+                    dbc.Col([html.H2("Summary of Costs",style={'textAlign':'center'}),dataTable1],width=8,align='end'),
                       
                     #dbc.Col([html.H2("Budget Cost vs Actual Cost by Subcontractor",style={'textAlign':'center'}),dcc.Graph(id = 'timeseries')],width={"size": 6, "offset": 0},align="center")
                     
@@ -357,7 +361,7 @@ def ScriptMain():
                             ),
                      
             dbc.Row([
-                    dbc.Col([html.H2("Comparison Table",style={'textAlign':'center'}),dataTable2],width=7)],
+                    dbc.Col([html.H2("Comparison Table",style={'textAlign':'center'}),dataTable2],width=8)],
                     justify = "end",
                     style = {'padding':30}
                     )
@@ -876,9 +880,9 @@ def ScriptMain():
         df = df[df.County.isin(cou)]
         df = df[df.YQ.isin(m)]
         #df = df[df.Position != 0]
-        df = df.groupby("Trade",as_index=False).agg({'Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
+        df = df.groupby("Trade",as_index=False).agg({'Enquiry_Sent':'count','Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
         df["Input Value"] = [0]*len(df)
-        df.columns  = ["Trade","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']
+        df.columns  = ["Trade","Number of Jobs","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']
         df = df.round(0)    
         
         dat = df.to_dict('records')
@@ -1403,7 +1407,7 @@ def ScriptMain():
             return list(e_set.Unit.unique())
         
         elif selected == 'setOU':
-            return []
+            return ['OU1']
         
         else:
             return values
@@ -1422,7 +1426,7 @@ def ScriptMain():
             return list(e_set['Tender_Type'].unique())
         
         elif selected == 'setma':
-            return []
+            return ['NB - Housing']
         
         else:
             return values
@@ -1441,7 +1445,7 @@ def ScriptMain():
             return list(e_set.Position.unique())
         
         elif selected == 'setpo':
-            return []
+            return ['1','2','3']
         
         else:
             return values
@@ -1460,7 +1464,7 @@ def ScriptMain():
             return list(e_set.County.unique())
         
         elif selected == 'setco':
-            return []
+            return ['West Yorkshire']
         
         else:
             return values
@@ -1479,7 +1483,7 @@ def ScriptMain():
             return list(e_set.Unit.unique())
         
         elif selected == 'setOUp':
-            return []
+            return ['OU1']
         
         else:
             return values
@@ -1498,7 +1502,7 @@ def ScriptMain():
             return list(e_set['Tender_Type'].unique())
         
         elif selected == 'setmap':
-            return []
+            return ['NB - Housing']
         
         else:
             return values
@@ -1517,7 +1521,7 @@ def ScriptMain():
             return list(e_set.Position.unique())
         
         elif selected == 'setposp':
-            return []
+            return ['1','2','3']
         
         else:
             return values
@@ -1536,7 +1540,7 @@ def ScriptMain():
             return list(e_set.County.unique())
         
         elif selected == 'setcoup':
-            return []
+            return ['West Yorkshire']
         
         else:
             return values
@@ -1563,13 +1567,39 @@ def ScriptMain():
         if len(df) < 1:
             raise PreventUpdate
             
-        cons = list(df.iloc[derived_virtual_selected_rows,0])
+        cons = list(df.iloc[derived_virtual_selected_rows,1])
         ems = [item+'@gmail.com' for item in cons]
         tels = ['01234 567 890']*len(cons)
         
         dff = pd.DataFrame({'Contractor':cons,'email':ems,'tel':tels})
                 
         return(dff.to_dict('records'))
+        
+    @app.callback(
+    Output('trade choice', 'value'),
+    [Input('select-all-tr', 'value')],
+     [State('trade choice', 'value')])
+
+    def select_key_trades(selected, values):
+        
+        if selected is None:
+            raise PreventUpdate
+        
+        if selected == 'keytr':
+            return ['***D_SC Bulk Excavation','***D_SC Groundworker','***E_SC PCC Floors',
+                    'G_SC Structural Steelwork','***M_SC Screeding','***F_LO Brickwork',
+                    '***G_QM Timber Upper Floors','***G_LO Joinery','***L_QM Stairs-Timber',
+                    '***G_QM Roof Trusses','***H_SC Roofing Slate & Tile','***P_SC Insulation',
+                    '***L_SC PVC Windows','***R_SC Plumbing','***Y_SC Electrical',
+                    '***M_SC Plastering','***M_SC Painting&Decorating','***Q_SC Landscaping',
+                    '***Q_SC Fencing (Timber)','***Q_SC Fencing (Metal)']
+        
+        elif selected == 'settr':
+            return ['***F_LO Brickwork']
+        
+        else:
+            return values
+        
             
     if __name__ == '__main__':
         app.run_server(debug=True)
