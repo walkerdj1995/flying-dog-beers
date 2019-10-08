@@ -176,7 +176,7 @@ def ScriptMain():
     
     dataTable3 = dt.DataTable(
         id='tab3',
-        columns=[{'id': c, 'name': c} for c in ['Contractor','Enquiry_Sent',"Price_Returned","First","Top_three"]],
+        columns=[{'id': c, 'name': c} for c in ['Contractor','Enquiry_Sent',"Price_Returned","% Return Rate","First","Top_three"]],
         sort_action='native',
         filter_action="native",
         row_selectable="multi",
@@ -1292,8 +1292,8 @@ def ScriptMain():
         df = df[df.YQ.isin(m)]
         df=df.round(0)
         
-        df = df.groupby("Contractor",as_index=False).agg({'Enquiry_Sent': "count","Price_Returned":"sum","First":"sum","Top_three":"sum"})
-        
+        df = df.groupby("Contractor",as_index=False).agg({'Enquiry_Sent': "count","Price_Returned":"sum","% Return Rate":"sum","First":"sum","Top_three":"sum"})
+        df["% Return Rate"] = round((df['Price_Returned']/df['Enquiry_Sent'])*100,0)
         data = df.to_dict('records')
         
         return data
