@@ -953,10 +953,10 @@ def ScriptMain():
         if x is None:
             x = 0
             
-        if gifa == 0:
+        if gifa == 0 or gifa is None:
             raise PreventUpdate
             
-        if plots == 0:
+        if plots == 0 or plots is None:
             raise PreventUpdate
         
         df = pd.DataFrame(rows)
