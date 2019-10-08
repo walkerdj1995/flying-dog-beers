@@ -60,7 +60,7 @@ def ScriptMain():
     
     dataTable1 = dt.DataTable(
         id='datatable-interactivity',
-        columns=[{'id': c, 'name': c} for c in ["Trade","Number of Jobs","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']],
+        columns=[{'id': c, 'name': c} for c in ["Trade","Number of Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']],
         sort_action='native',
         editable = True,
         style_data_conditional=[
@@ -219,6 +219,16 @@ def ScriptMain():
         'fontWeight': 'bold'
     },
     )
+    
+    dataTable5 = dt.DataTable(
+        id='joblist',
+        columns=[{'id': c, 'name': c} for c in ["E_Vis_Ref","Estimator"]],
+        row_selectable="multi",
+        style_header={
+        'backgroundColor': '#8ebcff',
+        'fontWeight': 'bold'
+    },
+    )
 
     # Home layout.
     layoutHome = html.Div([
@@ -232,10 +242,10 @@ def ScriptMain():
                     html.Label("Trade"),
                     dcc.Dropdown(id = 'trade choice',
         					options=[
-               					{'label': i, 'value': i} for i in list(np.append(e_set.Trade.unique(),'Key Trades'))
+               					{'label': i, 'value': i} for i in list(e_set.Trade.unique())
             						],
             					placeholder="Select a Trade",
-        						value = "Key Trades",
+        						value = "***F_LO Brickwork",
                                 multi=True
         						),
                     dcc.RadioItems(id='select-all-tr',
@@ -364,7 +374,7 @@ def ScriptMain():
                     dbc.Col([html.H2("Comparison Table",style={'textAlign':'center'}),dataTable2],width=8)],
                     justify = "end",
                     style = {'padding':30}
-                    )
+                    ),
                      
                     
 # =============================================================================
@@ -379,8 +389,11 @@ def ScriptMain():
 #                     justify = "around"
 #                             )
 # =============================================================================
+            html.Div([
+                    dataTable5])
             ]
         )
+            
              
     layoutPerf = html.Div([
             
@@ -823,9 +836,12 @@ def ScriptMain():
      Input('Market','value'),
      Input('pos','value'),
      Input('cou','value'),
-     Input('yq','value')])
+     Input('yq','value'),
+     Input('joblist', "derived_virtual_data"),
+     Input('joblist', "derived_virtual_selected_rows")],
+     [State('joblist', 'data')])
     
-    def update_memory(trade,OU,market,pos,cou,yq):
+    def update_memory(trade,OU,market,pos,cou,yq,rows,derived_virtual_selected_rows,data):
         
         if type(trade) == str:
             trade = [trade]
@@ -871,7 +887,16 @@ def ScriptMain():
         else:
             m = srtd[-8:]
             
-        print(m)
+        if rows is None:
+            rows=[]
+            
+        if derived_virtual_selected_rows is None:
+            derived_virtual_selected_rows = []
+            
+        if data is None:
+            data = []
+            
+        u = pd.DataFrame(rows)
             
         df = e_set[e_set.Trade.isin(trade)]
         df = df[df.Unit.isin(OU)]
@@ -879,15 +904,24 @@ def ScriptMain():
         df = df[df.Position.isin(pos)]
         df = df[df.County.isin(cou)]
         df = df[df.YQ.isin(m)]
-        #df = df[df.Position != 0]
-        df = df.groupby("Trade",as_index=False).agg({'Enquiry_Sent':'count','Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
-        df["Input Value"] = [0]*len(df)
-        df.columns  = ["Trade","Number of Jobs","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']
-        df = df.round(0)    
         
-        dat = df.to_dict('records')
+        if derived_virtual_selected_rows == []: 
+            df2 = df
             
+        else:
+            jobs = u.iloc[derived_virtual_selected_rows,0]
+            df2 = df[~df['E_Vis_Ref'].isin(jobs)]
+
+        #df = df[df.Position != 0]
+        df2 = df2.groupby("Trade",as_index=False).agg({'Enquiry_Sent':'count','Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
+        df2["Input Value"] = [0]*len(df2)
+        df2.columns  = ["Trade","Number of Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']
+        df2 = df2.round(0)  
+        
+        dat = df2.to_dict('records')
         return(dat)
+        
+       
         
     @app.callback(
     Output('datatable-interactivity', 'data'),
@@ -1599,6 +1633,77 @@ def ScriptMain():
         
         else:
             return values
+        
+        
+    @app.callback(
+    Output('joblist', 'data'),
+    [Input('trade choice','value'),
+     Input('OU','value'),
+     Input('Market','value'),
+     Input('pos','value'),
+     Input('cou','value'),
+     Input('yq','value')])
+    
+    def update_joblist(trade,OU,market,pos,cou,yq):
+        
+        if type(trade) == str:
+            trade = [trade]
+        elif trade is None or trade == []:
+             trade = list(e_set.Trade.unique())
+        else:
+            trade = trade
+        
+        if type(OU) == str:
+            OU = [OU]
+        elif OU is None or OU == []:
+             OU = list(e_set.Unit.unique())
+        else:
+            OU = OU
+            
+        if type(market) == str:
+            market = [market]
+        elif market is None or market ==[]:
+             market = list(e_set.Tender_Type.unique())
+        else:
+            market = market
+            
+        if type(pos) == str:
+            pos = [pos]
+        elif pos is None or pos == []:
+             pos = list(e_set.Position.unique())
+        else:
+            pos = pos
+            
+        if type(cou) == str:
+            cou = [cou]
+        elif cou is None or cou == []:
+             cou = list(e_set.County.unique())
+        else:
+            cou = cou
+            
+        srtd = sorted(e_set['YQ'].unique(), key=lambda x: datetime.datetime.strptime(x, '%Y - %m'))
+        
+        if yq == 0:
+            m = srtd
+        elif yq == 1:
+            m = srtd[-4:]
+        else:
+            m = srtd[-8:]
+            
+        print(m)
+            
+        df = e_set[e_set.Trade.isin(trade)]
+        df = df[df.Unit.isin(OU)]
+        df = df[df.Tender_Type.isin(market)]
+        df = df[df.Position.isin(pos)]
+        df = df[df.County.isin(cou)]
+        df = df[df.YQ.isin(m)]
+        #df = df[df.Position != 0]
+        x = df.loc[:,["E_Vis_Ref","Estimator"]]
+        x = x.drop_duplicates(['E_Vis_Ref'])
+        dat = x.to_dict('records')
+            
+        return(dat)
         
             
     if __name__ == '__main__':
