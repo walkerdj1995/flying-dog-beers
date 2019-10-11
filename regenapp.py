@@ -194,22 +194,24 @@ def ScriptMain():
     style_cell={"textAlign":'center'},
     )
     
-    vistable = dt.DataTable(
-        id='vistab',
-        columns=[{'id': c, 'name': c} for c in ['Job No',"Subcontractor Name","Helped at Tender?"," Estimating Budget"," Order Cost"," Buying Gain"]],
-        sort_action='native',
-        style_data_conditional=[
-        {
-            'if': {'row_index': 'odd'},
-            'backgroundColor': 'rgb(248, 248, 248)'
-        }
-    ],
-    style_header={
-        'backgroundColor': 'rgb(230, 230, 230)',
-        'fontWeight': 'bold'
-    },
-    style_cell={"textAlign":'center'},
-    )
+# =============================================================================
+#     vistable = dt.DataTable(
+#         id='vistab',
+#         columns=[{'id': c, 'name': c} for c in ['Job No',"Subcontractor Name","Helped at Tender?"," Estimating Budget"," Order Cost"," Buying Gain"]],
+#         sort_action='native',
+#         style_data_conditional=[
+#         {
+#             'if': {'row_index': 'odd'},
+#             'backgroundColor': 'rgb(248, 248, 248)'
+#         }
+#     ],
+#     style_header={
+#         'backgroundColor': 'rgb(230, 230, 230)',
+#         'fontWeight': 'bold'
+#     },
+#     style_cell={"textAlign":'center'},
+#     )
+# =============================================================================
     
     dataTable4 = dt.DataTable(
         id='contact',
@@ -266,8 +268,10 @@ def ScriptMain():
                                 multi = True
         						),
                     dcc.RadioItems(id='select-all-OU',
-                            options=[{'label': 'Select All', 'value': 'allOU'},
-                                     {'label': 'Reset', 'value': 'setOU'}])],
+                            options=[{'label': 'Same as KPI tab', 'value': 'same'},
+                                     {'label': 'Select All', 'value': 'allOU'},
+                                     {'label': 'Reset', 'value': 'setOU'}],
+                            value = 'same')],
                     align = "center",
                     
                     width = {'size':4}),
@@ -283,8 +287,10 @@ def ScriptMain():
                                 multi = True
         						),
                     dcc.RadioItems(id='select-all-ma',
-                            options=[{'label': 'Select All', 'value': 'allma'},
-                                     {'label': 'Reset', 'value': 'setma'}])],
+                            options=[{'label': 'Same as KPI tab', 'value': 'same'},
+                                     {'label': 'Select All', 'value': 'allma'},
+                                     {'label': 'Reset', 'value': 'setma'}],
+                            value = 'same')],
                     align = "center",
                     
                     width={"size": 4}),
@@ -306,8 +312,10 @@ def ScriptMain():
                                 multi=True
         						),
                     dcc.RadioItems(id='select-all-po',
-                            options=[{'label': 'Select All', 'value': 'allpo'},
-                                     {'label': 'Reset', 'value': 'setpo'}])],
+                            options=[{'label': 'Same as KPI tab', 'value': 'same'},
+                                     {'label': 'Select All', 'value': 'allpo'},
+                                     {'label': 'Reset', 'value': 'setpo'}],
+                            value = 'same')],
                      align = "center",
                     
                     width = {'size':4}),
@@ -323,8 +331,10 @@ def ScriptMain():
                                 multi = True
         						),
                     dcc.RadioItems(id='select-all-co',
-                            options=[{'label': 'Select All', 'value': 'allco'},
-                                     {'label': 'Reset', 'value': 'setco'}])],
+                            options=[{'label': 'Same as KPI tab', 'value': 'same'},
+                                     {'label': 'Select All', 'value': 'allco'},
+                                     {'label': 'Reset', 'value': 'setco'}],
+                            value = 'same')],
                     align = "center",
                     
                     width = {'size':4}),
@@ -349,13 +359,14 @@ def ScriptMain():
                     style = {'padding':30}),
                     
              dbc.Row([
-                    dbc.Col([html.H2("Summary of Costs",style={'textAlign':'center'}),dataTable1],width=8,align='end'),
+                    dbc.Col([html.H2("Summary of Costs",style={'textAlign':'center'}),dataTable1],width=8),
                       
                     #dbc.Col([html.H2("Budget Cost vs Actual Cost by Subcontractor",style={'textAlign':'center'}),dcc.Graph(id = 'timeseries')],width={"size": 6, "offset": 0},align="center")
                     
                     ],
                     
-                    justify = "end",
+                    align = 'start',
+                    justify = 'around',
                     style = {'padding':30}
                             ),
              dcc.Store(id='intermediate-value'),
@@ -375,6 +386,9 @@ def ScriptMain():
                     justify = "end",
                     style = {'padding':30}
                     ),
+            dbc.Row([
+                     dbc.Col([html.H2('Anomaly Detection/Removal',style={'textAlign':'center'}),dcc.Graph(id = 'jobplot')],width=12)]
+            )
                      
                     
 # =============================================================================
@@ -389,8 +403,6 @@ def ScriptMain():
 #                     justify = "around"
 #                             )
 # =============================================================================
-            html.Div([
-                    dataTable5])
             ]
         )
             
@@ -517,113 +529,115 @@ def ScriptMain():
            ])
                 
         
-    layoutMap = html.Div([
-            dbc.Row([
-                     dbc.Col(html.H3("E-Set Filters",style={'textAlign':'center'}),width = {'size':6}),
-                     dbc.Col(html.H3("E-Vision Filters",style={'textAlign':'center'}),width = {'size':6})]),
-			# Add dashbaord header/title.            
-            dbc.Row([
-                    dbc.Col([
-                            
-                    html.Label("Trade"),
-                    dcc.Dropdown(id = 'trade choice2',
-        					options=[
-               					{'label': i, 'value': i} for i in list(e_set.Trade.unique())
-            						],
-            					placeholder="Select a Trade",
-        						value = "***F_LO Brickwork"
-        						)],
-                     align = "center",
-                    
-                    width = {'size':2}),
-                    
-                    dbc.Col([
-                    html.Label("Ops Unit"),
-                    dcc.Dropdown(id = 'OU2',
-            					options=[
-               							 {'label': i, 'value': i} for i in list(e_set.Unit.unique())
-            							],
-            					placeholder="Select Ops Unit",
-        						value = "OU1"
-        						)],
-                    align = "center",
-                    
-                    width = {'size':2}),
-                    
-                    dbc.Col([
-                    html.Label("Market"),
-        			dcc.Dropdown(id = 'Market2',
-            					options=[
-               							 {'label': i, 'value': i} for i in list(e_set.Tender_Type.unique())
-            							],
-            					placeholder="Select Market",
-        						value = "NB - Housing"
-        						)],
-                    align = "center",
-                    
-                    width={"size": 2}),
-                    
-                    dbc.Col([
-                            
-                    html.Label("Trade"),
-                    dcc.Dropdown(id = 'vistrade2',
-        					options=[
-               					{'label': i, 'value': i} for i in list(e_vis.Trade.unique())
-            						],
-            					placeholder="Select a Trade",
-        						value = "Brickwork"
-        						)],
-                     align = "center",
-                    
-                    width = {'size':2}),
-                    
-                    dbc.Col([
-                    html.Label("Ops Unit"),
-                    dcc.Dropdown(id = 'visops2',
-            					options=[
-               							 {'label': i, 'value': i} for i in list(e_vis.Division.unique())
-            							],
-            					placeholder="Select Ops Unit",
-        						value = "Central OU1"
-        						)],
-                    align = "center",
-                    
-                    width = {'size':2}),
-                    
-                    dbc.Col([
-                    html.Label("Market"),
-        			dcc.Dropdown(id = 'vismark2',
-            					options=[
-               							 {'label': i, 'value': i} for i in list(e_vis['Level 1 & 2'].unique())
-            							],
-            					placeholder="Select Market",
-        						value = "New Build - Housing"
-        						)],
-                    align = "center",
-                    
-                    width={"size": 2}),
-                    ],
-                    justify = 'around',
-                    style = {'padding':30}),
-                    
-            dbc.Row([
-                    #dbc.Col([dataTable2], width={"size": 6, "offset": 0},align="center"),
-                            
-                    dbc.Col([html.H2("Subcontractor Summary",style={'textAlign':'center'}),dcc.Graph(id = "enq")], width={"size": 12, "offset": 0},align="center")
-                    ],
-                    
-                    justify = "around"
-                            ),
-             dbc.Row([
-                    dbc.Col([html.H3("Subcontractors That Are Pricing",style={'textAlign':'center'}),dcc.Graph(id = 'price')], width={"size": 6, "offset": 0},align="center"),
-                            
-                    dbc.Col([html.H3("Subcontractors Receiving Work",style={'textAlign':'center'}),dcc.Graph(id = "work")], width={"size": 6, "offset": 0},align="center")
-                    ],
-                    
-                    justify = "around"
-                            )
-            ]
-        )
+# =============================================================================
+#     layoutMap = html.Div([
+#             dbc.Row([
+#                      dbc.Col(html.H3("E-Set Filters",style={'textAlign':'center'}),width = {'size':6}),
+#                      dbc.Col(html.H3("E-Vision Filters",style={'textAlign':'center'}),width = {'size':6})]),
+# 			# Add dashbaord header/title.            
+#             dbc.Row([
+#                     dbc.Col([
+#                             
+#                     html.Label("Trade"),
+#                     dcc.Dropdown(id = 'trade choice2',
+#         					options=[
+#                					{'label': i, 'value': i} for i in list(e_set.Trade.unique())
+#             						],
+#             					placeholder="Select a Trade",
+#         						value = "***F_LO Brickwork"
+#         						)],
+#                      align = "center",
+#                     
+#                     width = {'size':2}),
+#                     
+#                     dbc.Col([
+#                     html.Label("Ops Unit"),
+#                     dcc.Dropdown(id = 'OU2',
+#             					options=[
+#                							 {'label': i, 'value': i} for i in list(e_set.Unit.unique())
+#             							],
+#             					placeholder="Select Ops Unit",
+#         						value = "OU1"
+#         						)],
+#                     align = "center",
+#                     
+#                     width = {'size':2}),
+#                     
+#                     dbc.Col([
+#                     html.Label("Market"),
+#         			dcc.Dropdown(id = 'Market2',
+#             					options=[
+#                							 {'label': i, 'value': i} for i in list(e_set.Tender_Type.unique())
+#             							],
+#             					placeholder="Select Market",
+#         						value = "NB - Housing"
+#         						)],
+#                     align = "center",
+#                     
+#                     width={"size": 2}),
+#                     
+#                     dbc.Col([
+#                             
+#                     html.Label("Trade"),
+#                     dcc.Dropdown(id = 'vistrade2',
+#         					options=[
+#                					{'label': i, 'value': i} for i in list(e_vis.Trade.unique())
+#             						],
+#             					placeholder="Select a Trade",
+#         						value = "Brickwork"
+#         						)],
+#                      align = "center",
+#                     
+#                     width = {'size':2}),
+#                     
+#                     dbc.Col([
+#                     html.Label("Ops Unit"),
+#                     dcc.Dropdown(id = 'visops2',
+#             					options=[
+#                							 {'label': i, 'value': i} for i in list(e_vis.Division.unique())
+#             							],
+#             					placeholder="Select Ops Unit",
+#         						value = "Central OU1"
+#         						)],
+#                     align = "center",
+#                     
+#                     width = {'size':2}),
+#                     
+#                     dbc.Col([
+#                     html.Label("Market"),
+#         			dcc.Dropdown(id = 'vismark2',
+#             					options=[
+#                							 {'label': i, 'value': i} for i in list(e_vis['Level 1 & 2'].unique())
+#             							],
+#             					placeholder="Select Market",
+#         						value = "New Build - Housing"
+#         						)],
+#                     align = "center",
+#                     
+#                     width={"size": 2}),
+#                     ],
+#                     justify = 'around',
+#                     style = {'padding':30}),
+#                     
+#             dbc.Row([
+#                     #dbc.Col([dataTable2], width={"size": 6, "offset": 0},align="center"),
+#                             
+#                     dbc.Col([html.H2("Subcontractor Summary",style={'textAlign':'center'}),dcc.Graph(id = "enq")], width={"size": 12, "offset": 0},align="center")
+#                     ],
+#                     
+#                     justify = "around"
+#                             ),
+#              dbc.Row([
+#                     dbc.Col([html.H3("Subcontractors That Are Pricing",style={'textAlign':'center'}),dcc.Graph(id = 'price')], width={"size": 6, "offset": 0},align="center"),
+#                             
+#                     dbc.Col([html.H3("Subcontractors Receiving Work",style={'textAlign':'center'}),dcc.Graph(id = "work")], width={"size": 6, "offset": 0},align="center")
+#                     ],
+#                     
+#                     justify = "around"
+#                             )
+#             ]
+#         )
+# =============================================================================
              
 # =============================================================================
 #     layoutFinGraphs = html.Div([
@@ -739,79 +753,81 @@ def ScriptMain():
 #         )
 # =============================================================================
            
-    layoutVis = html.Div([
-            
-			# Add dashbaord header/title.            
-             dbc.Row([
-                    dbc.Col([
-                            
-                    html.Label("Trade"),
-                    dcc.Dropdown(id = 'evistrade',
-        					options=[
-               					{'label': i, 'value': i} for i in list(e_vis.Trade.unique())
-            						],
-            					placeholder="Select a Trade",
-        						value = "Brickwork",
-                                multi=True
-        						)],
-                     align = "center",
-                    
-                    width = {'size':3}),
-                    
-                    dbc.Col([
-                    html.Label("Ops Unit"),
-                    dcc.Dropdown(id = 'evisops',
-            					options=[
-               							 {'label': i, 'value': i} for i in list(e_vis.Division.unique())
-            							],
-            					placeholder="Select Ops Unit",
-        						#value = "OU1",
-                                multi = True
-        						)],
-                    align = "center",
-                    
-                    width = {'size':3}),
-                    
-                    dbc.Col([
-                    html.Label("Market"),
-        			dcc.Dropdown(id = 'evisMarket',
-            					options=[
-               							 {'label': i, 'value': i} for i in list(e_vis["Market Sector"].unique())
-            							],
-            					placeholder="Select Market",
-        						#value = "NB - Housing",
-                                multi = True
-        						)],
-                    align = "center",
-                    
-                    width={"size": 3}),
-                    
-                    dbc.Col([
-                    html.Label("E_Set Trade"),
-        			dcc.Dropdown(id = 'esettrade',
-            					options=[
-               							 {'label': i, 'value': i} for i in list(e_set["Trade"].unique())
-            							],
-            					placeholder="Select Trade",
-        						value = "***F_LO Brickwork",
-                                multi = True
-        						)],
-                    align = "center",
-                    
-                    width={"size": 3}),
-
-                    ],
-                    justify = 'around',
-                    style = {'padding':30}),
-             
-            dbc.Row([
-                    dbc.Col([html.H2("Tender versus Order",style={'textAlign':'center'}),vistable],width=6,align="center"),
-                    dbc.Col([html.H3(id = "mean")],width=3),
-                    dbc.Col([html.H2("% Helped at Tender"),dcc.Graph(id='helpdonut')],width=3)
-                    
-                    ],align='center')
-            ]
-        )
+# =============================================================================
+#     layoutVis = html.Div([
+#             
+# 			# Add dashbaord header/title.            
+#              dbc.Row([
+#                     dbc.Col([
+#                             
+#                     html.Label("Trade"),
+#                     dcc.Dropdown(id = 'evistrade',
+#         					options=[
+#                					{'label': i, 'value': i} for i in list(e_vis.Trade.unique())
+#             						],
+#             					placeholder="Select a Trade",
+#         						value = "Brickwork",
+#                                 multi=True
+#         						)],
+#                      align = "center",
+#                     
+#                     width = {'size':3}),
+#                     
+#                     dbc.Col([
+#                     html.Label("Ops Unit"),
+#                     dcc.Dropdown(id = 'evisops',
+#             					options=[
+#                							 {'label': i, 'value': i} for i in list(e_vis.Division.unique())
+#             							],
+#             					placeholder="Select Ops Unit",
+#         						#value = "OU1",
+#                                 multi = True
+#         						)],
+#                     align = "center",
+#                     
+#                     width = {'size':3}),
+#                     
+#                     dbc.Col([
+#                     html.Label("Market"),
+#         			dcc.Dropdown(id = 'evisMarket',
+#             					options=[
+#                							 {'label': i, 'value': i} for i in list(e_vis["Market Sector"].unique())
+#             							],
+#             					placeholder="Select Market",
+#         						#value = "NB - Housing",
+#                                 multi = True
+#         						)],
+#                     align = "center",
+#                     
+#                     width={"size": 3}),
+#                     
+#                     dbc.Col([
+#                     html.Label("E_Set Trade"),
+#         			dcc.Dropdown(id = 'esettrade',
+#             					options=[
+#                							 {'label': i, 'value': i} for i in list(e_set["Trade"].unique())
+#             							],
+#             					placeholder="Select Trade",
+#         						value = "***F_LO Brickwork",
+#                                 multi = True
+#         						)],
+#                     align = "center",
+#                     
+#                     width={"size": 3}),
+# 
+#                     ],
+#                     justify = 'around',
+#                     style = {'padding':30}),
+#              
+#             dbc.Row([
+#                     dbc.Col([html.H2("Tender versus Order",style={'textAlign':'center'}),vistable],width=6,align="center"),
+#                     dbc.Col([html.H3(id = "mean")],width=3),
+#                     dbc.Col([html.H2("% Helped at Tender"),dcc.Graph(id='helpdonut')],width=3)
+#                     
+#                     ],align='center')
+#             ]
+#         )
+# =============================================================================
     
              
     
@@ -823,9 +839,9 @@ def ScriptMain():
                     children = [
                             dcc.Tab(label = 'KPI Scores', value = 'tabsLayoutKPI', children = layoutPerf),
                             dcc.Tab(label = 'Financial Benchmarking', value = 'tabsLayoutFin', children = layoutHome),
-                            dcc.Tab(label = 'Tender vs Order', value = 'tabsLayouttvo', children = layoutVis),
+                            #dcc.Tab(label = 'Tender vs Order', value = 'tabsLayouttvo', children = layoutVis),
                             #dcc.Tab(label = 'Financial Graphs', value = 'tabsLayoutFing', children = layoutFinGraphs),
-                            dcc.Tab(label = 'KPI Graphs', value = 'tabsLayoutKPIg', children = layoutMap)
+                            #dcc.Tab(label = 'KPI Graphs', value = 'tabsLayoutKPIg', children = layoutMap)
                             ])
     ])
         
@@ -837,11 +853,11 @@ def ScriptMain():
      Input('pos','value'),
      Input('cou','value'),
      Input('yq','value'),
-     Input('joblist', "derived_virtual_data"),
-     Input('joblist', "derived_virtual_selected_rows")],
-     [State('joblist', 'data')])
+     Input('jobplot', "selectedData")])
+     #Input('joblist', "derived_virtual_selected_rows")],
+     #[State('joblist', 'data')])
     
-    def update_memory(trade,OU,market,pos,cou,yq,rows,derived_virtual_selected_rows,data):
+    def update_memory(trade,OU,market,pos,cou,yq,rows):#,derived_virtual_selected_rows,data):
         
         if type(trade) == str:
             trade = [trade]
@@ -888,15 +904,9 @@ def ScriptMain():
             m = srtd[-8:]
             
         if rows is None:
-            rows=[]
+            rows={'points':[]}
             
-        if derived_virtual_selected_rows is None:
-            derived_virtual_selected_rows = []
-            
-        if data is None:
-            data = []
-            
-        u = pd.DataFrame(rows)
+        #u = pd.DataFrame(rows)
             
         df = e_set[e_set.Trade.isin(trade)]
         df = df[df.Unit.isin(OU)]
@@ -905,15 +915,27 @@ def ScriptMain():
         df = df[df.County.isin(cou)]
         df = df[df.YQ.isin(m)]
         
-        if derived_virtual_selected_rows == []: 
-            df2 = df
+        p = []
+        x = rows.get('points')
+        for item in x:
+            z = item.get('y')
+            p.append(z)
             
-        else:
-            jobs = u.iloc[derived_virtual_selected_rows,0]
-            df2 = df[~df['E_Vis_Ref'].isin(jobs)]
+        for item in p:
+            df = df[df["Cost_M2"] != item]
+        #df2 = pd.concat([df,u]).drop_duplicates(keep=False)
+        
+# =============================================================================
+#         if derived_virtual_selected_rows == []: 
+#             df2 = df
+#             
+#         else:
+#             jobs = u.iloc[derived_virtual_selected_rows,0]
+#             df2 = df[~df['E_Vis_Ref'].isin(jobs)]
+# =============================================================================
 
         #df = df[df.Position != 0]
-        df2 = df2.groupby("Trade",as_index=False).agg({'Enquiry_Sent':'count','Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
+        df2 = df.groupby("Trade",as_index=False).agg({'Enquiry_Sent':'count','Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
         df2["Input Value"] = [0]*len(df2)
         df2.columns  = ["Trade","Number of Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']
         df2 = df2.round(0)  
@@ -1142,38 +1164,40 @@ def ScriptMain():
 #         return(dat)
 # =============================================================================
         
-    @app.callback(
-    Output('enq', 'figure'),
-    [Input('trade choice2', 'value'),
-     Input('OU2','value'),
-     Input('Market2','value')])
-                
-    
-    def update_enq(trade,OU,market):
-        
-        df = e_set[e_set.Trade == trade]
-        df = df[df.Unit == OU]
-        df = df[df.Tender_Type == market]
-        df = df.groupby("Contractor",as_index=False).agg({'Enquiry_Sent': "count","Price_Returned":"sum","First":"sum","Top_three":"sum"})
-        
-        fig = go.Figure()
-        fig.add_trace(go.Bar(x=df["Contractor"],
-        y=df["Enquiry_Sent"],
-        name='Enquiry_Sent',
-        marker_color='rgb(178,34,34)'
-        ))
-        fig.add_trace(go.Bar(x=df["Contractor"],
-        y=df["Price_Returned"],
-        name='Price_Returned',
-        marker_color='rgb(26, 118, 255)'
-        ))
-        fig.add_trace(go.Bar(x=df["Contractor"],
-        y=df["Top_three"],
-        name='Top 3',
-        marker_color='rgb(0,255,0)'
-        ))
-        
-        return(fig) 
+# =============================================================================
+#     @app.callback(
+#     Output('enq', 'figure'),
+#     [Input('trade choice2', 'value'),
+#      Input('OU2','value'),
+#      Input('Market2','value')])
+#                 
+#     
+#     def update_enq(trade,OU,market):
+#         
+#         df = e_set[e_set.Trade == trade]
+#         df = df[df.Unit == OU]
+#         df = df[df.Tender_Type == market]
+#         df = df.groupby("Contractor",as_index=False).agg({'Enquiry_Sent': "count","Price_Returned":"sum","First":"sum","Top_three":"sum"})
+#         
+#         fig = go.Figure()
+#         fig.add_trace(go.Bar(x=df["Contractor"],
+#         y=df["Enquiry_Sent"],
+#         name='Enquiry_Sent',
+#         marker_color='rgb(178,34,34)'
+#         ))
+#         fig.add_trace(go.Bar(x=df["Contractor"],
+#         y=df["Price_Returned"],
+#         name='Price_Returned',
+#         marker_color='rgb(26, 118, 255)'
+#         ))
+#         fig.add_trace(go.Bar(x=df["Contractor"],
+#         y=df["Top_three"],
+#         name='Top 3',
+#         marker_color='rgb(0,255,0)'
+#         ))
+#         
+#         return(fig) 
+# =============================================================================
         
 # =============================================================================
 #     @app.callback(
@@ -1204,51 +1228,55 @@ def ScriptMain():
 #         return(fig) 
 # =============================================================================
         
-    @app.callback(
-    Output('price', 'figure'),
-    [Input('trade choice2', 'value'),
-     Input('OU2','value'),
-     Input('Market2','value')])
-                
-    
-    def update_price(trade,OU,market):
+# =============================================================================
+#     @app.callback(
+#     Output('price', 'figure'),
+#     [Input('trade choice2', 'value'),
+#      Input('OU2','value'),
+#      Input('Market2','value')])
+#                 
+#     
+#     def update_price(trade,OU,market):
+#         
+#         df = e_set[e_set.Trade == trade]
+#         df = df[df.Unit == OU]
+#         df = df[df.Tender_Type == market]
+#         df = df[df.Price_Returned != 0]
+#         
+#         df = df.groupby("Contractor",as_index=False).agg({'Price_Returned':"sum"})
+#         
+#         labels = list(df.Contractor)
+#         values = list(df["Price_Returned"])
+# 
+#         # Use `hole` to create a donut-like pie chart
+#         fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
+#         
+#         return(fig) 
+# =============================================================================
         
-        df = e_set[e_set.Trade == trade]
-        df = df[df.Unit == OU]
-        df = df[df.Tender_Type == market]
-        df = df[df.Price_Returned != 0]
-        
-        df = df.groupby("Contractor",as_index=False).agg({'Price_Returned':"sum"})
-        
-        labels = list(df.Contractor)
-        values = list(df["Price_Returned"])
-
-        # Use `hole` to create a donut-like pie chart
-        fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
-        
-        return(fig) 
-        
-    @app.callback(
-    Output('work', 'figure'),
-    [Input('vistrade2', 'value'),
-     Input('visops2','value'),
-     Input('vismark2','value')])
-                
-    
-    def update_work(trade,OU,market):
-        
-        df = e_vis[e_vis.Trade == trade]
-        df = df[df.Division == OU]
-        df = df[df['Level 1 & 2'] == market]
-        
-        df = df.groupby("Subcontractor Name",as_index=False).agg({'Job No':"count"})
-        
-        labels = list(df["Subcontractor Name"])
-        values = list(df["Job No"])
-        
-        fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
-        
-        return(fig) 
+# =============================================================================
+#     @app.callback(
+#     Output('work', 'figure'),
+#     [Input('vistrade2', 'value'),
+#      Input('visops2','value'),
+#      Input('vismark2','value')])
+#                 
+#     
+#     def update_work(trade,OU,market):
+#         
+#         df = e_vis[e_vis.Trade == trade]
+#         df = df[df.Division == OU]
+#         df = df[df['Level 1 & 2'] == market]
+#         
+#         df = df.groupby("Subcontractor Name",as_index=False).agg({'Job No':"count"})
+#         
+#         labels = list(df["Subcontractor Name"])
+#         values = list(df["Job No"])
+#         
+#         fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
+#         
+#         return(fig) 
+# =============================================================================
         
     @app.callback(
     Output('tab3', 'data'),
@@ -1336,106 +1364,113 @@ def ScriptMain():
         
         return data
     
-    @app.callback(
-    Output('vistab', 'data'),
-    [Input('evistrade', 'value'),
-     Input('evisops','value'),
-     Input('evisMarket','value'),
-     Input('esettrade','value')])
-                
+# =============================================================================
+#     @app.callback(
+#     Output('vistab', 'data'),
+#     [Input('evistrade', 'value'),
+#      Input('evisops','value'),
+#      Input('evisMarket','value'),
+#      Input('esettrade','value')])
+#                 
+#     
+#     def update_vistab(trade,OU,market,trade2):
+#         
+#         if type(trade) == str:
+#             trade = [trade]
+#         elif trade is None:
+#              trade = list(e_vis.Trade.unique())
+#         else:
+#             trade = trade
+#         
+#         if type(OU) == str:
+#             OU = [OU]
+#         elif OU is None:
+#              OU = list(e_vis.Division.unique())
+#         else:
+#             OU = OU
+#             
+#         if type(market) == str:
+#             market = [market]
+#         elif market is None:
+#              market = list(e_vis['Market Sector'].unique())
+#         else:
+#             market = market
+#             
+#         df = e_vis[e_vis.Trade.isin(trade)]
+#         df = df[df.Division.isin(OU)]
+#         df = df[df['Market Sector'].isin(market)]
+#         
+#         helped = []
+#         
+#         for index, row in df.iterrows():
+#             temp = e_set.loc[e_set["E_Vis_Ref"]==row["Job No"]]
+#             priced = list(temp.loc[temp.Price_Returned == 1].Contractor)
+#             if(row["Subcontractor Name"] in priced):
+#                 helped.append(1)
+#             else:
+#                 helped.append(0)
+#                 
+#         df["Helped at Tender?"] = helped
+#         df = df.round(0)
+#         
+#         data = df.to_dict('records')
+#         
+#         return data
+# =============================================================================
     
-    def update_vistab(trade,OU,market,trade2):
+# =============================================================================
+#     @app.callback(
+#     Output('mean', 'children'),
+#     [Input('vistab', 'data'),
+#      Input('vistab', 'columns')])
+#         
+#     def display_mean(rows, columns):
+#         
+#         if rows is None:
+#             raise PreventUpdate
+# 
+#             
+#         df = pd.DataFrame(rows, columns=[c['name'] for c in columns])
+#         
+#         x = df[" Buying Gain"].astype(float)
+#         z = df[" Estimating Budget"].astype(float)
+#         y = sum(x)/sum(z)
+#         y = round(y,5)
+#         
+#         return('The Total Buying gain is: %{}'.format(y))
+# =============================================================================
         
-        if type(trade) == str:
-            trade = [trade]
-        elif trade is None:
-             trade = list(e_vis.Trade.unique())
-        else:
-            trade = trade
-        
-        if type(OU) == str:
-            OU = [OU]
-        elif OU is None:
-             OU = list(e_vis.Division.unique())
-        else:
-            OU = OU
-            
-        if type(market) == str:
-            market = [market]
-        elif market is None:
-             market = list(e_vis['Market Sector'].unique())
-        else:
-            market = market
-            
-        df = e_vis[e_vis.Trade.isin(trade)]
-        df = df[df.Division.isin(OU)]
-        df = df[df['Market Sector'].isin(market)]
-        
-        helped = []
-        
-        for index, row in df.iterrows():
-            temp = e_set.loc[e_set["E_Vis_Ref"]==row["Job No"]]
-            priced = list(temp.loc[temp.Price_Returned == 1].Contractor)
-            if(row["Subcontractor Name"] in priced):
-                helped.append(1)
-            else:
-                helped.append(0)
-                
-        df["Helped at Tender?"] = helped
-        df = df.round(0)
-        
-        data = df.to_dict('records')
-        
-        return data
-    
-    @app.callback(
-    Output('mean', 'children'),
-    [Input('vistab', 'data'),
-     Input('vistab', 'columns')])
-        
-    def display_mean(rows, columns):
-        
-        if rows is None:
-            raise PreventUpdate
-
-            
-        df = pd.DataFrame(rows, columns=[c['name'] for c in columns])
-        
-        x = df[" Buying Gain"].astype(float)
-        z = df[" Estimating Budget"].astype(float)
-        y = sum(x)/sum(z)
-        y = round(y,5)
-        
-        return('The Total Buying gain is: %{}'.format(y))
-        
-    @app.callback(
-    Output('helpdonut', 'figure'),
-    [Input('vistab', 'data'),
-     Input('vistab', 'columns')])
-        
-    def display_help(rows, columns):
-        
-        if rows is None:
-            raise PreventUpdate
-            
-        df = pd.DataFrame(rows, columns=[c['name'] for c in columns])
-    
-        values = [sum(df["Helped at Tender?"]),len(df) - sum(df["Helped at Tender?"])]
-        labels = ["Yes","No"]
-        
-        fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
-        
-        return(fig)
+# =============================================================================
+#     @app.callback(
+#     Output('helpdonut', 'figure'),
+#     [Input('vistab', 'data'),
+#      Input('vistab', 'columns')])
+#         
+#     def display_help(rows, columns):
+#         
+#         if rows is None:
+#             raise PreventUpdate
+#             
+#         df = pd.DataFrame(rows, columns=[c['name'] for c in columns])
+#     
+#         values = [sum(df["Helped at Tender?"]),len(df) - sum(df["Helped at Tender?"])]
+#         labels = ["Yes","No"]
+#         
+#         fig = go.Figure(data=[go.Pie(labels=labels, values=values, hole=.3)])
+#         
+#         return(fig)
+# =============================================================================
         
     @app.callback(
     Output('OU', 'value'),
-    [Input('select-all-OU', 'value')],
+    [Input('select-all-OU', 'value'),
+     Input('OUp','value')],
      [State('OU', 'value')])
 
-    def test(selected, values):
-        
-        if selected is None:
-            raise PreventUpdate
+    def test(selected, copy, values):
+            
+        if selected == 'same':
+            return copy
         
         if selected == 'allOU':
             return list(e_set.Unit.unique())
@@ -1448,13 +1483,17 @@ def ScriptMain():
         
     @app.callback(
     Output('Market', 'value'),
-    [Input('select-all-ma', 'value')],
+    [Input('select-all-ma', 'value'),
+     Input('Marketp','value')],
      [State('Market', 'value')])
 
-    def sma(selected, values):
+    def sma(selected, copy, values):
         
         if selected is None:
             raise PreventUpdate
+            
+        if selected == 'same':
+            return copy
         
         if selected == 'allma':
             return list(e_set['Tender_Type'].unique())
@@ -1467,13 +1506,17 @@ def ScriptMain():
         
     @app.callback(
     Output('pos', 'value'),
-    [Input('select-all-po', 'value')],
+    [Input('select-all-po', 'value'),
+     Input('posp','value')],
      [State('pos', 'value')])
 
-    def smp(selected, values):
+    def smp(selected, copy, values):
         
         if selected is None:
             raise PreventUpdate
+            
+        if selected == 'same':
+            return copy
         
         if selected == 'allpo':
             return list(e_set.Position.unique())
@@ -1486,13 +1529,17 @@ def ScriptMain():
         
     @app.callback(
     Output('cou', 'value'),
-    [Input('select-all-co', 'value')],
+    [Input('select-all-co', 'value'),
+     Input('coup','value')],
      [State('cou', 'value')])
 
-    def smc(selected, values):
+    def smc(selected, copy, values):
         
         if selected is None:
             raise PreventUpdate
+            
+        if selected == 'same':
+            return copy
         
         if selected == 'allco':
             return list(e_set.County.unique())
@@ -1636,7 +1683,7 @@ def ScriptMain():
         
         
     @app.callback(
-    Output('joblist', 'data'),
+    Output('jobplot', 'figure'),
     [Input('trade choice','value'),
      Input('OU','value'),
      Input('Market','value'),
@@ -1699,11 +1746,10 @@ def ScriptMain():
         df = df[df.County.isin(cou)]
         df = df[df.YQ.isin(m)]
         #df = df[df.Position != 0]
-        x = df.loc[:,["E_Vis_Ref","Estimator"]]
-        x = x.drop_duplicates(['E_Vis_Ref'])
-        dat = x.to_dict('records')
+        fig = px.box(df,y="Cost_M2",color="Trade")
+        fig.layout.clickmode = "event+select"
             
-        return(dat)
+        return(fig)
         
             
     if __name__ == '__main__':
