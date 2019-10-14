@@ -127,7 +127,7 @@ def ScriptMain():
         {   
             'if': {
                 'column_id': 'Flag Cost/M2',
-                'filter_query': '{Flag Cost/M2} eq "Out of Range"'
+                'filter_query': '{Flag Cost/M2} eq "Poor - Low"'
                     },
             'backgroundColor': '#FF4040',
             'color': 'white'
@@ -135,9 +135,57 @@ def ScriptMain():
         {   
             'if': {
                 'column_id': 'Flag Cost/Plot',
-                'filter_query': '{Flag Cost/Plot} eq "Out of Range"'
+                'filter_query': '{Flag Cost/Plot} eq "Poor - Low"'
                     },
             'backgroundColor': '#FF4040',
+            'color': 'white',
+        },
+                    {   
+            'if': {
+                'column_id': 'Flag Cost/M2',
+                'filter_query': '{Flag Cost/M2} eq "Poor - High"'
+                    },
+            'backgroundColor': '#FF4040',
+            'color': 'white'
+        },
+        {   
+            'if': {
+                'column_id': 'Flag Cost/Plot',
+                'filter_query': '{Flag Cost/Plot} eq "Poor - High"'
+                    },
+            'backgroundColor': '#FF4040',
+            'color': 'white',
+        },
+        {   
+            'if': {
+                'column_id': 'Flag Cost/M2',
+                'filter_query': '{Flag Cost/M2} eq "Check - Low"'
+                    },
+            'backgroundColor': '#ffbf00',
+            'color': 'white'
+        },
+        {   
+            'if': {
+                'column_id': 'Flag Cost/Plot',
+                'filter_query': '{Flag Cost/Plot} eq "Check - Low"'
+                    },
+            'backgroundColor': '#ffbf00',
+            'color': 'white',
+        },
+        {   
+            'if': {
+                'column_id': 'Flag Cost/M2',
+                'filter_query': '{Flag Cost/M2} eq "Check - High"'
+                    },
+            'backgroundColor': '#ffbf00',
+            'color': 'white'
+        },
+        {   
+            'if': {
+                'column_id': 'Flag Cost/Plot',
+                'filter_query': '{Flag Cost/Plot} eq "Check - High"'
+                    },
+            'backgroundColor': '#ffbf00',
             'color': 'white',
         },
         {   
@@ -177,7 +225,7 @@ def ScriptMain():
     
     dataTable3 = dt.DataTable(
         id='tab3',
-        columns=[{'id': c, 'name': c} for c in ['Contractor','Enquiry_Sent',"Price_Returned","% Return Rate","First","Top_three"]],
+        columns=[{'id': c, 'name': c} for c in ['Contractor','Enquiry_Sent',"Price_Returned","% Return Rate","First","Top_three","% KPI Score"]],
         sort_action='native',
         filter_action="native",
         row_selectable="multi",
@@ -853,11 +901,10 @@ def ScriptMain():
      Input('pos','value'),
      Input('cou','value'),
      Input('yq','value'),
-     Input('jobplot', "selectedData")])
-     #Input('joblist', "derived_virtual_selected_rows")],
-     #[State('joblist', 'data')])
-    
-    def update_memory(trade,OU,market,pos,cou,yq,rows):#,derived_virtual_selected_rows,data):
+     Input('jobplot', "selectedData")],
+     [State('datatable-interactivity','data')])
+
+    def update_memory(trade,OU,market,pos,cou,yq,rows,inp):#,derived_virtual_selected_rows,data):
         
         if type(trade) == str:
             trade = [trade]
@@ -906,8 +953,6 @@ def ScriptMain():
         if rows is None:
             rows={'points':[]}
             
-        #u = pd.DataFrame(rows)
-            
         df = e_set[e_set.Trade.isin(trade)]
         df = df[df.Unit.isin(OU)]
         df = df[df.Tender_Type.isin(market)]
@@ -936,7 +981,18 @@ def ScriptMain():
 
         #df = df[df.Position != 0]
         df2 = df.groupby("Trade",as_index=False).agg({'Enquiry_Sent':'count','Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
-        df2["Input Value"] = [0]*len(df2)
+        if inp is None:
+            vals = [0]*len(df2)
+        else:
+            cur = pd.DataFrame(inp)
+            vals = cur["Input Value"]
+            for i in range(0,len(vals)):
+                if pd.isnull(vals[i]) == True:
+                    vals[i] = 0
+                else:
+                    vals[i] = vals[i]
+            
+        df2["Input Value"] = vals
         df2.columns  = ["Trade","Number of Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']
         df2 = df2.round(0)  
         
@@ -950,8 +1006,14 @@ def ScriptMain():
     [Input('memory', 'data')])
 
     def update_table(data):
+        t = pd.DataFrame(data)
+        for i in range(0,len(t)):
+            if pd.isnull(t["Input Value"][i]):
+                t["Input Value"][i] = 0
+                
+        dat = t.to_dict('records')
         
-        return data
+        return dat
     
     @app.callback(
     [Output('tab2', 'data'),
@@ -993,16 +1055,33 @@ def ScriptMain():
         df1 = pd.DataFrame({'Trade':df.Trade,'Quoted Cost/M2':qm,'Quoted Cost/Plot':qp,'Flag Cost/M2':[0]*len(df),'Flag Cost/Plot':[0]*len(df)})
         
         flag = []
+        dev = [0]*len(df1)
         for i in range(0,len(df1)):
-            if (float(df1['Quoted Cost/M2'][i]) < float(df["Min Cost/M2(£)"][i]) or float(df1['Quoted Cost/M2'][i]) > float(df["Max Cost/M2(£)"][i])):
-                flag.append("Out of Range")
+            dev[i] = ((float(df1['Quoted Cost/M2'][i]) - float(df["Mean Cost/M2(£)"][i]))/(float(df["Mean Cost/M2(£)"][i])))
+            if dev[i] <= -0.25:
+                flag.append("Poor - Low")
+            elif dev[i] > -0.25 and dev[i] <= -0.1:
+                flag.append("Check - Low")
+            elif dev[i]>0.1 and dev[i] <=0.25:
+                flag.append("Check - High")
+            elif dev[i]>0.25:
+                flag.append("Poor - High")
             else:
                 flag.append("OK")
+            
         
         flag2 = []
+        dev2 = [0]*len(df1)
         for j in range(0,len(df1)):
-            if (float(df1['Quoted Cost/Plot'][j]) < float(df["Min Cost/Plot(£)"][j]) or float(df1['Quoted Cost/Plot'][j]) > float(df["Max Cost/Plot(£)"][j])):
-                flag2.append("Out of Range")
+            dev2[j] = ((float(df1['Quoted Cost/Plot'][j]) - float(df["Mean Cost/Plot(£)"][j]))/(float(df["Mean Cost/Plot(£)"][j])))
+            if dev2[j] <= -0.25:
+                flag2.append("Poor - Low")
+            elif dev2[j] > -0.25 and dev2[i] <= -0.1:
+                flag2.append("Check - Low")
+            elif dev2[j]>0.1 and dev2[i] <=0.25:
+                flag2.append("Check - High")
+            elif dev2[j]>0.25:
+                flag2.append("Poor - High")
             else:
                 flag2.append("OK")
                 
@@ -1348,19 +1427,20 @@ def ScriptMain():
         else:
             m = srtd[-8:]
             
-        print(m)
-            
         df = e_set[e_set.Trade.isin(trade)]
         df = df[df.Unit.isin(OU)]
         df = df[df.Tender_Type.isin(market)]
         df = df[df.Position.isin(pos)]
         df = df[df.County.isin(cou)]
         df = df[df.YQ.isin(m)]
-        df=df.round(0)
         
-        df = df.groupby("Contractor",as_index=False).agg({'Enquiry_Sent': "count","Price_Returned":"sum","First":"sum","Top_three":"sum"})
-        df["% Return Rate"] = round((df['Price_Returned']/df['Enquiry_Sent'])*100,0)
-        data = df.to_dict('records')
+        conts = list(df.Contractor.unique())
+        df2 = e_set[e_set.Contractor.isin(conts)]
+        
+        df2 = df2.groupby("Contractor",as_index=False).agg({'Enquiry_Sent': "count","Price_Returned":"sum","First":"sum","Top_three":"sum"})
+        df2["% Return Rate"] = round((df2['Price_Returned']/df2['Enquiry_Sent'])*100,0)
+        df2["% KPI Score"] = round(((df2["% Return Rate"]*0.67) + ((df2["First"]/df2["Price_Returned"])*0.198) + ((df2["Top_three"]/df2["Price_Returned"])*0.122))/(0.868),0)
+        data = df2.to_dict('records')
         
         return data
     
@@ -1648,7 +1728,7 @@ def ScriptMain():
         if len(df) < 1:
             raise PreventUpdate
             
-        cons = list(df.iloc[derived_virtual_selected_rows,1])
+        cons = list(df.iloc[derived_virtual_selected_rows,2])
         ems = [item+'@gmail.com' for item in cons]
         tels = ['01234 567 890']*len(cons)
         
