@@ -60,7 +60,7 @@ def ScriptMain():
     
     dataTable1 = dt.DataTable(
         id='datatable-interactivity',
-        columns=[{'id': c, 'name': c} for c in ["Trade","Number of Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']],
+        columns=[{'id': c, 'name': c} for c in ["Trade","Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']],
         sort_action='native',
         editable = True,
         style_data_conditional=[
@@ -270,15 +270,17 @@ def ScriptMain():
     },
     )
     
-    dataTable5 = dt.DataTable(
-        id='joblist',
-        columns=[{'id': c, 'name': c} for c in ["E_Vis_Ref","Estimator"]],
-        row_selectable="multi",
-        style_header={
-        'backgroundColor': '#8ebcff',
-        'fontWeight': 'bold'
-    },
-    )
+# =============================================================================
+#     dataTable5 = dt.DataTable(
+#         id='joblist',
+#         columns=[{'id': c, 'name': c} for c in ["E_Vis_Ref","Estimator"]],
+#         row_selectable="multi",
+#         style_header={
+#         'backgroundColor': '#8ebcff',
+#         'fontWeight': 'bold'
+#     },
+#     )
+# =============================================================================
 
     # Home layout.
     layoutHome = html.Div([
@@ -405,11 +407,21 @@ def ScriptMain():
                     width={"size": 4})],
                     justify = 'around',
                     style = {'padding':30}),
+                           
+                            
+             dbc.Row([
+                    dbc.Col([html.Label('GIFA'),dcc.Input(id = 'gifa',type='number',placeholder = 'Input GIFA')],width=3),
+                    dbc.Col([html.Label('Plots'),dcc.Input(id = 'plots',type='number',placeholder = 'Input number of plots')],width=3),
+                    dbc.Col([html.Button(['Update'],id='btn')],width = 3, align = 'start'),
+                    ],
+                    
+                    justify = "around",
+                    style = {'padding':30}
+                            ),
                     
              dbc.Row([
-                    dbc.Col([html.H2("Summary of Costs",style={'textAlign':'center'}),dataTable1],width=8),
-                      
-                    #dbc.Col([html.H2("Budget Cost vs Actual Cost by Subcontractor",style={'textAlign':'center'}),dcc.Graph(id = 'timeseries')],width={"size": 6, "offset": 0},align="center")
+                    dbc.Col([html.H2("Summary of Costs",style={'textAlign':'center'}),dataTable1],width=7),
+                    dbc.Col([html.H2("Comparison Table",style={'textAlign':'center'}),dataTable2],width=5) 
                     
                     ],
                     
@@ -419,21 +431,14 @@ def ScriptMain():
                             ),
              dcc.Store(id='intermediate-value'),
                      
-             dbc.Row([
-                    dbc.Col([html.Label('GIFA'),dcc.Input(id = 'gifa',type='number',placeholder = 'Input GIFA')],width=2),
-                    dbc.Col([html.Label('Plots'),dcc.Input(id = 'plots',type='number',placeholder = 'Input number of plots')],width=3),
-                    dbc.Col([html.Button(['Update'],id='btn')],width = 2, align = 'right'),
-                    ],
-                    
-                    justify = "end",
-                    style = {'padding':30}
-                            ),
                      
-            dbc.Row([
-                    dbc.Col([html.H2("Comparison Table",style={'textAlign':'center'}),dataTable2],width=8)],
-                    justify = "end",
-                    style = {'padding':30}
-                    ),
+# =============================================================================
+#             dbc.Row([
+#                     dbc.Col([html.H2("Comparison Table",style={'textAlign':'center'}),dataTable2],width=8)],
+#                     justify = "end",
+#                     style = {'padding':30}
+#                     ),
+# =============================================================================
             dbc.Row([
                      dbc.Col([html.H2('Anomaly Detection/Removal',style={'textAlign':'center'}),dcc.Graph(id = 'jobplot')],width=12)]
             )
@@ -993,7 +998,7 @@ def ScriptMain():
                     vals[i] = vals[i]
             
         df2["Input Value"] = vals
-        df2.columns  = ["Trade","Number of Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']
+        df2.columns  = ["Trade","Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']
         df2 = df2.round(0)  
         
         dat = df2.to_dict('records')
