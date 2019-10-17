@@ -19,8 +19,8 @@ from dash.exceptions import PreventUpdate
 import datetime
 
 
-url1 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/eset.csv'
-url2 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/EVis.csv'
+url1 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/Data%20Sets/esetOct19.csv'
+url2 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/Data%20Sets/evisOct19.csv'
 
 e_set = pd.read_csv(url1,na_values=['#VALUE!', '#DIV/0!'])
 e_vis = pd.read_csv(url2) 
@@ -294,7 +294,7 @@ def ScriptMain():
                     html.Label("Trade"),
                     dcc.Dropdown(id = 'trade choice',
         					options=[
-               					{'label': i, 'value': i} for i in list(e_set.Trade.unique())
+               					{'label': i, 'value': i} for i in list(e_set.Trade.unique()) if i != 0
             						],
             					placeholder="Select a Trade",
         						value = "***F_LO Brickwork",
@@ -311,7 +311,7 @@ def ScriptMain():
                     html.Label("Ops Unit"),
                     dcc.Dropdown(id = 'OU',
             					options=[
-               							 {'label': i, 'value': i} for i in list(e_set.Unit.unique())
+               							 {'label': i, 'value': i} for i in list(e_set.Unit.unique()) if i != 0
             							],
             					placeholder="Select Ops Unit",
         						#value = "OU1",
@@ -330,7 +330,7 @@ def ScriptMain():
                     html.Label("Market"),
         			dcc.Dropdown(id = 'Market',
             					options=[
-               							 {'label': i, 'value': i} for i in list(e_set.Tender_Type.unique())
+               							 {'label': i, 'value': i} for i in list(e_set.Tender_Type.unique()) if i != 0
             							],
             					placeholder="Select Market",
         						#value = "NB - Housing",
@@ -355,7 +355,7 @@ def ScriptMain():
                     html.Label("Position"),
                     dcc.Dropdown(id = 'pos',
         					options=[
-               					{'label': i, 'value': i} for i in list(e_set.Position.unique())
+               					{'label': i, 'value': i} for i in list(e_set.Position.unique()) if i != 0
             						],
             					placeholder="Choose Position",
         						#value = "1",
@@ -374,7 +374,7 @@ def ScriptMain():
                     html.Label("County"),
                     dcc.Dropdown(id = 'cou',
             					options=[
-               							 {'label': i, 'value': i} for i in list(e_set.County.unique())
+               							 {'label': i, 'value': i} for i in list(e_set.County.unique()) if i != 0
             							],
             					placeholder="Select County",
         						#value = "West Yorkshire",
@@ -440,7 +440,13 @@ def ScriptMain():
 #                     ),
 # =============================================================================
             dbc.Row([
-                     dbc.Col([html.H2('Anomaly Detection/Removal',style={'textAlign':'center'}),dcc.Graph(id = 'jobplot')],width=12)]
+                     dbc.Col([html.H2('Anomaly Detection/Removal',style={'textAlign':'center'}),
+                              dcc.RadioItems(id = 'Rem',
+                                             options=[{'label': 'Remove Outliers', 'value': 'rem'},
+                                                      {'label': 'Keep All', 'value': 'kee'}],
+                                             value = 'kee'),
+                            dcc.Graph(id = 'jobplot')
+                              ],width=12)]
             )
                      
                     
@@ -469,7 +475,7 @@ def ScriptMain():
                     html.Label("Trade"),
                     dcc.Dropdown(id = 'trade choicep',
         					options=[
-               					{'label': i, 'value': i} for i in list(e_set.Trade.unique())
+               					{'label': i, 'value': i} for i in list(e_set.Trade.unique()) if i != 0
             						],
             					placeholder="Select a Trade",
         						value = "***F_LO Brickwork",
@@ -483,7 +489,7 @@ def ScriptMain():
                     html.Label("Ops Unit"),
                     dcc.Dropdown(id = 'OUp',
             					options=[
-               							 {'label': i, 'value': i} for i in list(e_set.Unit.unique())
+               							 {'label': i, 'value': i} for i in list(e_set.Unit.unique()) if i != 0
             							],
             					placeholder="Select Ops Unit",
         						#value = "OU1",
@@ -500,7 +506,7 @@ def ScriptMain():
                     html.Label("Market"),
         			dcc.Dropdown(id = 'Marketp',
             					options=[
-               							 {'label': i, 'value': i} for i in list(e_set.Tender_Type.unique())
+               							 {'label': i, 'value': i} for i in list(e_set.Tender_Type.unique()) if i != 0
             							],
             					placeholder="Select Market",
         						#value = "NB - Housing",
@@ -523,7 +529,7 @@ def ScriptMain():
                     html.Label("Position"),
                     dcc.Dropdown(id = 'posp',
         					options=[
-               					{'label': i, 'value': i} for i in list(e_set.Position.unique())
+               					{'label': i, 'value': i} for i in list(e_set.Position.unique()) if i != 0
             						],
             					placeholder="Choose Position",
         						#value = "1",
@@ -540,7 +546,7 @@ def ScriptMain():
                     html.Label("County"),
                     dcc.Dropdown(id = 'coup',
             					options=[
-               							 {'label': i, 'value': i} for i in list(e_set.County.unique())
+               							 {'label': i, 'value': i} for i in list(e_set.County.unique()) if i != 0
             							],
             					placeholder="Select County",
         						#value = "West Yorkshire",
@@ -906,10 +912,11 @@ def ScriptMain():
      Input('pos','value'),
      Input('cou','value'),
      Input('yq','value'),
-     Input('jobplot', "selectedData")],
+     Input('jobplot', "selectedData"),
+     Input('Rem','value')],
      [State('datatable-interactivity','data')])
 
-    def update_memory(trade,OU,market,pos,cou,yq,rows,inp):#,derived_virtual_selected_rows,data):
+    def update_memory(trade,OU,market,pos,cou,yq,rows,rem,inp):#,derived_virtual_selected_rows,data):
         
         if type(trade) == str:
             trade = [trade]
@@ -965,6 +972,38 @@ def ScriptMain():
         df = df[df.County.isin(cou)]
         df = df[df.YQ.isin(m)]
         
+        df = df.reset_index(drop=True)
+        
+        def q1(x):
+            return x.quantile(0.25)
+
+        def q2(x):
+            return x.quantile(0.75)
+        
+        if rem == 'rem':
+            df_rem = df.copy()
+            f = {'Cost_M2': [q1,q2]}
+            df1 = df.groupby('Trade',as_index=False).agg(f)
+            df1.columns = ['Trade','Q1','Q3']
+            df1['Diff'] = df1['Q3']-df1['Q1']
+            inds = []
+            
+            for i in range(0,len(df_rem)):
+                tr = df_rem['Trade'][i]
+                low = float(df1[df1['Trade'] == tr]['Q1']-((df1[df1['Trade'] == tr]['Diff'])*1.5))
+                high = float(df1[df1['Trade'] == tr]['Q3']+((df1[df1['Trade'] == tr]['Diff'])*1.5))
+                
+                if float(df_rem['Cost_M2'][i]) > high:
+                    inds.append(i)
+                    
+                if float(df_rem['Cost_M2'][i]) < low:
+                    inds.append(i)
+                    
+            df_fin = df_rem.drop(inds)
+            
+        else:
+            df_fin = df
+        
         p = []
         x = rows.get('points')
         for item in x:
@@ -972,7 +1011,7 @@ def ScriptMain():
             p.append(z)
             
         for item in p:
-            df = df[df["Cost_M2"] != item]
+            df_fin = df_fin[df_fin["Cost_M2"] != item]
         #df2 = pd.concat([df,u]).drop_duplicates(keep=False)
         
 # =============================================================================
@@ -985,7 +1024,7 @@ def ScriptMain():
 # =============================================================================
 
         #df = df[df.Position != 0]
-        df2 = df.groupby("Trade",as_index=False).agg({'Enquiry_Sent':'count','Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
+        df2 = df_fin.groupby("Trade",as_index=False).agg({'Enquiry_Sent':'count','Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
         if inp is None:
             vals = [0]*len(df2)
         else:
@@ -1774,9 +1813,10 @@ def ScriptMain():
      Input('Market','value'),
      Input('pos','value'),
      Input('cou','value'),
-     Input('yq','value')])
+     Input('yq','value'),
+     Input('Rem','value')])
     
-    def update_joblist(trade,OU,market,pos,cou,yq):
+    def update_joblist(trade,OU,market,pos,cou,yq,rem):
         
         if type(trade) == str:
             trade = [trade]
@@ -1830,10 +1870,45 @@ def ScriptMain():
         df = df[df.Position.isin(pos)]
         df = df[df.County.isin(cou)]
         df = df[df.YQ.isin(m)]
-        #df = df[df.Position != 0]
-        fig = px.box(df,y="Cost_M2",color="Trade")
-        fig.layout.clickmode = "event+select"
+        df = df.reset_index(drop=True)
+        
+        # If remove outliers is T, group by trade, work out q1&3 and diff, times diff by 1.5 and remove any values 
+        def q1(x):
+            return x.quantile(0.25)
+
+        def q2(x):
+            return x.quantile(0.75)
+        
+        if rem == 'rem':
+            df_rem = df.copy()
+            f = {'Cost_M2': [q1,q2]}
+            df1 = df.groupby('Trade',as_index=False).agg(f)
+            df1.columns = ['Trade','Q1','Q3']
+            df1['Diff'] = df1['Q3']-df1['Q1']
+            inds = []
             
+            for i in range(0,len(df_rem)):
+                tr = df_rem['Trade'][i]
+                low = float(df1[df1['Trade'] == tr]['Q1']-((df1[df1['Trade'] == tr]['Diff'])*1.5))
+                high = float(df1[df1['Trade'] == tr]['Q3']+((df1[df1['Trade'] == tr]['Diff'])*1.5))
+                
+                if float(df_rem['Cost_M2'][i]) > high:
+                    inds.append(i)
+                    
+                if float(df_rem['Cost_M2'][i]) < low:
+                    inds.append(i)
+                    
+            df_fin = df_rem.drop(inds)
+            fig = px.box(df_fin,y="Cost_M2",color="Trade",points=False)
+            fig.layout.clickmode = "event+select"
+            
+        else:
+            df_fin = df
+                
+            #df = df[df.Position != 0]
+            fig = px.box(df_fin,y="Cost_M2",color="Trade")
+            fig.layout.clickmode = "event+select"
+                
         return(fig)
         
             
