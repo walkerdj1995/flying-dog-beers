@@ -22,9 +22,11 @@ from operator import itemgetter
 
 url1 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/Data%20Sets/esetOct19.csv'
 url2 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/Data%20Sets/evisOct19.csv'
+url3 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/Data%20Sets/SupplierDetails.csv'
 
 e_set = pd.read_csv(url1,na_values=['#VALUE!', '#DIV/0!'])
 e_vis = pd.read_csv(url2) 
+details = pd.read_csv(url3)
 
 # ----------------- Pre-Processing----------------------------------------------------------
 # Change colnames
@@ -50,6 +52,17 @@ e_vis.dropna(subset=['Date Created', ' Order Cost','Level 1 & 2'],inplace = True
 
 x = 0
 
+details_2 = details[["Name",'Primary Contact Email','Phone No','Mobile No']].drop_duplicates()
+details_2[["Name",'Primary Contact Email','Phone No','Mobile No']] = details_2[["Name",'Primary Contact Email','Phone No','Mobile No']].astype(str)
+details_2['Phone No'] = details_2['Phone No'].str.replace(" ","")
+details_2['Primary Contact Email'] = details_2['Primary Contact Email'].str.replace(" ","")
+details_2['Mobile No'] = details_2['Mobile No'].str.replace(" ","")
+g = details_2.groupby('Name')['Primary Contact Email','Phone No','Mobile No'].apply(lambda x: list(np.unique(x))).reset_index()
+for i in range(0,len(g[0])):
+    g[0][i] = [x for x in g[0][i] if str(x) != 'nan']
+    
+for i in range(0,len(g[0])):
+    g[0][i] = '/'.join(g[0][i])
 
 #%%
 
@@ -264,7 +277,7 @@ def ScriptMain():
     
     dataTable4 = dt.DataTable(
         id='contact',
-        columns=[{'id': c, 'name': c} for c in ["Contractor","email","tel"]],
+        columns=[{'id': c, 'name': c} for c in ["Contractor","Details"]],
         style_header={
         'backgroundColor': '#8ebcff',
         'fontWeight': 'bold'
@@ -1801,10 +1814,14 @@ def ScriptMain():
             raise PreventUpdate
             
         cons = list(df.iloc[derived_virtual_selected_rows,2])
-        ems = [item+'@gmail.com' for item in cons]
-        tels = ['01234 567 890']*len(cons)
+        deets = []
+        for i in range(0,len(cons)):
+            if cons[i] in list(g['Name']):
+                deets.append(list(g[g["Name"]==cons[i]][0]))
+            else:
+                deets.append("No Matching Details")
         
-        dff = pd.DataFrame({'Contractor':cons,'email':ems,'tel':tels})
+        dff = pd.DataFrame({'Contractor':cons,'Details':deets})
                 
         return(dff.to_dict('records'))
         
