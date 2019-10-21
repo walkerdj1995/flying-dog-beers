@@ -17,6 +17,7 @@ import plotly.express as px
 import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 import datetime
+from operator import itemgetter
 
 
 url1 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/Data%20Sets/esetOct19.csv'
@@ -109,7 +110,7 @@ def ScriptMain():
         'backgroundColor': 'rgb(230, 230, 230)',
         'fontWeight': 'bold'
     },
-    style_cell={"textAlign":'center'},
+    style_cell={"textAlign":'end'},
     )
 
         
@@ -270,6 +271,15 @@ def ScriptMain():
     },
     )
     
+    tab_selected_style = {
+    'borderTop': '1px solid #d6d6d6',
+    'borderBottom': '1px solid #d6d6d6',
+    'backgroundColor': '#8ebcff',
+    'color': 'white',
+    'padding': '6px'
+}
+
+    
 # =============================================================================
 #     dataTable5 = dt.DataTable(
 #         id='joblist',
@@ -293,9 +303,9 @@ def ScriptMain():
                             
                     html.Label("Trade"),
                     dcc.Dropdown(id = 'trade choice',
-        					options=[
+        					options=sorted([
                					{'label': i, 'value': i} for i in list(e_set.Trade.unique()) if i != 0
-            						],
+            						],key=itemgetter('value')),
             					placeholder="Select a Trade",
         						value = "***F_LO Brickwork",
                                 multi=True
@@ -310,9 +320,9 @@ def ScriptMain():
                     dbc.Col([
                     html.Label("Ops Unit"),
                     dcc.Dropdown(id = 'OU',
-            					options=[
+            					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.Unit.unique()) if i != 0
-            							],
+            							],key=itemgetter('value')),
             					placeholder="Select Ops Unit",
         						#value = "OU1",
                                 multi = True
@@ -329,9 +339,9 @@ def ScriptMain():
                     dbc.Col([
                     html.Label("Market"),
         			dcc.Dropdown(id = 'Market',
-            					options=[
+            					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.Tender_Type.unique()) if i != 0
-            							],
+            							],key=itemgetter('value')),
             					placeholder="Select Market",
         						#value = "NB - Housing",
                                 multi = True
@@ -354,9 +364,9 @@ def ScriptMain():
                             
                     html.Label("Position"),
                     dcc.Dropdown(id = 'pos',
-        					options=[
+        					options=sorted([
                					{'label': i, 'value': i} for i in list(e_set.Position.unique()) if i != 0
-            						],
+            						],key=itemgetter('value')),
             					placeholder="Choose Position",
         						#value = "1",
                                 multi=True
@@ -373,9 +383,9 @@ def ScriptMain():
                     dbc.Col([
                     html.Label("County"),
                     dcc.Dropdown(id = 'cou',
-            					options=[
+            					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.County.unique()) if i != 0
-            							],
+            							],key=itemgetter('value')),
             					placeholder="Select County",
         						#value = "West Yorkshire",
                                 multi = True
@@ -474,9 +484,9 @@ def ScriptMain():
                             
                     html.Label("Trade"),
                     dcc.Dropdown(id = 'trade choicep',
-        					options=[
+        					options=sorted([
                					{'label': i, 'value': i} for i in list(e_set.Trade.unique()) if i != 0
-            						],
+            						],key=itemgetter('value')),
             					placeholder="Select a Trade",
         						value = "***F_LO Brickwork",
                                 multi=True
@@ -488,16 +498,13 @@ def ScriptMain():
                     dbc.Col([
                     html.Label("Ops Unit"),
                     dcc.Dropdown(id = 'OUp',
-            					options=[
+            					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.Unit.unique()) if i != 0
-            							],
+            							],key=itemgetter('value')),
             					placeholder="Select Ops Unit",
         						#value = "OU1",
                                 multi = True
-        						),
-                    dcc.RadioItems(id='select-all-OUp',
-                            options=[{'label': 'Select All', 'value': 'allOUp'},
-                                     {'label': 'Reset', 'value': 'setOUp'}])],
+        						)],
                     align = "center",
                     
                     width = {'size':4}),
@@ -505,16 +512,13 @@ def ScriptMain():
                     dbc.Col([
                     html.Label("Market"),
         			dcc.Dropdown(id = 'Marketp',
-            					options=[
+            					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.Tender_Type.unique()) if i != 0
-            							],
+            							],key=itemgetter('value')),
             					placeholder="Select Market",
         						#value = "NB - Housing",
                                 multi = True
-        						),
-                    dcc.RadioItems(id='select-all-map',
-                            options=[{'label': 'Select All', 'value': 'allmap'},
-                                     {'label': 'Reset', 'value': 'setmap'}])],
+        						)],
                     align = "center",
                     
                     width={"size": 4}),
@@ -522,22 +526,34 @@ def ScriptMain():
                     ],
                     justify = 'around',
                     style = {'padding':30}),
+                                        
+            dbc.Row([
+                    dbc.Col([
+                            dcc.RadioItems(id='select-all-OUp',
+                                           options=[{'label': 'Select All', 'value': 'allOUp'},
+                                                    {'label': 'Reset', 'value': 'setOUp'}])
+                            ],width=4),
+
+                    dbc.Col([        
+                            dcc.RadioItems(id='select-all-map',
+                                           options=[{'label': 'Select All', 'value': 'allmap'},
+                                                    {'label': 'Reset', 'value': 'setmap'}])
+                            ],width=4)
+
+                ],justify = 'end'),
                     
             dbc.Row([
                     dbc.Col([
                             
                     html.Label("Position"),
                     dcc.Dropdown(id = 'posp',
-        					options=[
+        					options=sorted([
                					{'label': i, 'value': i} for i in list(e_set.Position.unique()) if i != 0
-            						],
+            						],key=itemgetter('value')),
             					placeholder="Choose Position",
         						#value = "1",
                                 multi=True
-        						),
-                    dcc.RadioItems(id='select-all-posp',
-                            options=[{'label': 'Select All', 'value': 'allposp'},
-                                     {'label': 'Reset', 'value': 'setposp'}])],
+        						)],
                      align = "center",
                     
                     width = {'size':4}),
@@ -545,16 +561,13 @@ def ScriptMain():
                     dbc.Col([
                     html.Label("County"),
                     dcc.Dropdown(id = 'coup',
-            					options=[
+            					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.County.unique()) if i != 0
-            							],
+            							],key=itemgetter('value')),
             					placeholder="Select County",
         						#value = "West Yorkshire",
                                 multi = True
-        						),
-                    dcc.RadioItems(id='select-all-coup',
-                            options=[{'label': 'Select All', 'value': 'allcoup'},
-                                     {'label': 'Reset', 'value': 'setcoup'}])],
+        						)],
                     align = "center",
                     
                     width = {'size':4}),
@@ -577,6 +590,21 @@ def ScriptMain():
                     width={"size": 4})],
                     justify = 'around',
                     style = {'padding':30}),
+                            
+            dbc.Row([
+                    dbc.Col([
+                            dcc.RadioItems(id='select-all-posp',
+                            options=[{'label': 'Select All', 'value': 'allposp'},
+                                     {'label': 'Reset', 'value': 'setposp'}])
+                            ],width=4),
+
+                    dbc.Col([
+                            dcc.RadioItems(id='select-all-coup',
+                            options=[{'label': 'Select All', 'value': 'allcoup'},
+                                     {'label': 'Reset', 'value': 'setcoup'}])
+                            ],width=4)
+
+                    ],justify = 'start'),
                     
            dbc.Row([
                     dbc.Col([html.H2("Subcontractor List",style={'textAlign':'center'}),dataTable3],width=6,align="center"),
@@ -896,8 +924,8 @@ def ScriptMain():
                     id='tabs',
                     value = 'tabsLayoutHome',
                     children = [
-                            dcc.Tab(label = 'KPI Scores', value = 'tabsLayoutKPI', children = layoutPerf),
-                            dcc.Tab(label = 'Financial Benchmarking', value = 'tabsLayoutFin', children = layoutHome),
+                            dcc.Tab(label = 'KPI Scores', value = 'tabsLayoutKPI', children = layoutPerf,selected_style=tab_selected_style),
+                            dcc.Tab(label = 'Financial Benchmarking', value = 'tabsLayoutFin', children = layoutHome,selected_style=tab_selected_style),
                             #dcc.Tab(label = 'Tender vs Order', value = 'tabsLayouttvo', children = layoutVis),
                             #dcc.Tab(label = 'Financial Graphs', value = 'tabsLayoutFing', children = layoutFinGraphs),
                             #dcc.Tab(label = 'KPI Graphs', value = 'tabsLayoutKPIg', children = layoutMap)
