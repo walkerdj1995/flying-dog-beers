@@ -18,6 +18,8 @@ import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 import datetime
 from operator import itemgetter
+from collections import Counter
+from six.moves.urllib.parse import quote
 
 
 url1 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/Data%20Sets/esetOct19.csv'
@@ -62,7 +64,24 @@ for i in range(0,len(g[0])):
     g[0][i] = [x for x in g[0][i] if str(x) != 'nan']
     
 for i in range(0,len(g[0])):
-    g[0][i] = '/'.join(g[0][i])
+    g[0][i] = ' / '.join(g[0][i])
+    
+deets = []
+cons = list(e_set.Contractor.unique())
+for i in range(0,len(cons)):
+    if cons[i] in list(g['Name']):
+        deets.append(list(g[g["Name"]==cons[i]][0]))
+    else:
+        deets.append("No Matching Details")
+
+dff = pd.DataFrame({'Contractor':cons,'Details':deets})
+    
+    
+#Create preferred list
+    
+All = list(e_vis['Subcontractor Name'])
+cnt = Counter(All)
+pref =  [k for k, v in cnt.items() if v > 2]
 
 #%%
 
@@ -239,7 +258,8 @@ def ScriptMain():
     
     dataTable3 = dt.DataTable(
         id='tab3',
-        columns=[{'id': c, 'name': c} for c in ['Contractor','Enquiry_Sent',"Price_Returned","% Return Rate","First","Top_three","% KPI Score"]],
+        columns=[{'id': c, 'name': c} for c in ['Contractor','Trade','Enquiry_Sent',"Price_Returned","% Return Rate","First","Top_three","% KPI Score","Contact Details"]],
+        #fixed_rows={'headers': True, 'data': 0 },
         sort_action='native',
         filter_action="native",
         row_selectable="multi",
@@ -253,7 +273,14 @@ def ScriptMain():
         'backgroundColor': '#8ebcff',
         'fontWeight': 'bold'
     },
-    style_cell={"textAlign":'center'},
+    style_cell={"textAlign":'center',
+                'font_size':'18px',
+                'whiteSpace': 'normal'},
+    
+    style_table={
+        'maxHeight': '1000px',
+        'overflowY': 'scroll'
+    },
     )
     
 # =============================================================================
@@ -274,15 +301,7 @@ def ScriptMain():
 #     style_cell={"textAlign":'center'},
 #     )
 # =============================================================================
-    
-    dataTable4 = dt.DataTable(
-        id='contact',
-        columns=[{'id': c, 'name': c} for c in ["Contractor","Details"]],
-        style_header={
-        'backgroundColor': '#8ebcff',
-        'fontWeight': 'bold'
-    },
-    )
+
     
     tab_selected_style = {
     'borderTop': '1px solid #d6d6d6',
@@ -319,13 +338,15 @@ def ScriptMain():
         					options=sorted([
                					{'label': i, 'value': i} for i in list(e_set.Trade.unique()) if i != 0
             						],key=itemgetter('value')),
-            					placeholder="Select a Trade",
+            					placeholder="Select Other Trades",
         						value = "***F_LO Brickwork",
                                 multi=True
         						),
                     dcc.RadioItems(id='select-all-tr',
-                            options=[{'label': 'Select Key Trades', 'value': 'keytr'},
-                                     {'label': 'Reset', 'value': 'settr'}])],
+                            options=[{'label': 'Same as KPI tab', 'value': 'same'},
+                                     {'label': 'Select Key Trades', 'value': 'keytr'},
+                                     {'label': 'Reset', 'value': 'settr'}],
+                            value = 'same')],
                     align = "center",
                     
                     width = {'size':4}),
@@ -336,7 +357,7 @@ def ScriptMain():
             					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.Unit.unique()) if i != 0
             							],key=itemgetter('value')),
-            					placeholder="Select Ops Unit",
+            					placeholder="All Selected",
         						#value = "OU1",
                                 multi = True
         						),
@@ -355,7 +376,7 @@ def ScriptMain():
             					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.Tender_Type.unique()) if i != 0
             							],key=itemgetter('value')),
-            					placeholder="Select Market",
+            					placeholder="All Selected",
         						#value = "NB - Housing",
                                 multi = True
         						),
@@ -380,7 +401,7 @@ def ScriptMain():
         					options=sorted([
                					{'label': i, 'value': i} for i in list(e_set.Position.unique()) if i != 0
             						],key=itemgetter('value')),
-            					placeholder="Choose Position",
+            					placeholder="All Selected",
         						#value = "1",
                                 multi=True
         						),
@@ -399,7 +420,7 @@ def ScriptMain():
             					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.County.unique()) if i != 0
             							],key=itemgetter('value')),
-            					placeholder="Select County",
+            					placeholder="All Selected",
         						#value = "West Yorkshire",
                                 multi = True
         						),
@@ -500,10 +521,14 @@ def ScriptMain():
         					options=sorted([
                					{'label': i, 'value': i} for i in list(e_set.Trade.unique()) if i != 0
             						],key=itemgetter('value')),
-            					placeholder="Select a Trade",
+            					placeholder="Select Other Trades",
         						value = "***F_LO Brickwork",
                                 multi=True
-        						)],
+        						),
+                                        
+                    dcc.RadioItems(id='select-all-trp',
+                            options=[{'label': 'Select Key Trades', 'value': 'keytrp'},
+                                     {'label': 'Reset', 'value': 'settrp'}])],
                      align = "center",
                     
                     width = {'size':4}),
@@ -514,10 +539,13 @@ def ScriptMain():
             					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.Unit.unique()) if i != 0
             							],key=itemgetter('value')),
-            					placeholder="Select Ops Unit",
+            					placeholder="All Selected",
         						#value = "OU1",
                                 multi = True
-        						)],
+        						),
+                    dcc.RadioItems(id='select-all-OUp',
+                                   options=[{'label': 'Select All', 'value': 'allOUp'},
+                                            {'label': 'Reset', 'value': 'setOUp'}])],
                     align = "center",
                     
                     width = {'size':4}),
@@ -528,10 +556,13 @@ def ScriptMain():
             					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.Tender_Type.unique()) if i != 0
             							],key=itemgetter('value')),
-            					placeholder="Select Market",
+            					placeholder="All Selected",
         						#value = "NB - Housing",
                                 multi = True
-        						)],
+        						),
+                    dcc.RadioItems(id='select-all-map',
+                                   options=[{'label': 'Select All', 'value': 'allmap'},
+                                            {'label': 'Reset', 'value': 'setmap'}])],
                     align = "center",
                     
                     width={"size": 4}),
@@ -540,20 +571,6 @@ def ScriptMain():
                     justify = 'around',
                     style = {'padding':30}),
                                         
-            dbc.Row([
-                    dbc.Col([
-                            dcc.RadioItems(id='select-all-OUp',
-                                           options=[{'label': 'Select All', 'value': 'allOUp'},
-                                                    {'label': 'Reset', 'value': 'setOUp'}])
-                            ],width=4),
-
-                    dbc.Col([        
-                            dcc.RadioItems(id='select-all-map',
-                                           options=[{'label': 'Select All', 'value': 'allmap'},
-                                                    {'label': 'Reset', 'value': 'setmap'}])
-                            ],width=4)
-
-                ],justify = 'end'),
                     
             dbc.Row([
                     dbc.Col([
@@ -563,13 +580,13 @@ def ScriptMain():
         					options=sorted([
                					{'label': i, 'value': i} for i in list(e_set.Position.unique()) if i != 0
             						],key=itemgetter('value')),
-            					placeholder="Choose Position",
+            					placeholder="All Selected",
         						#value = "1",
                                 multi=True
         						)],
                      align = "center",
                     
-                    width = {'size':4}),
+                    width = {'size':3}),
                     
                     dbc.Col([
                     html.Label("County"),
@@ -577,13 +594,13 @@ def ScriptMain():
             					options=sorted([
                							 {'label': i, 'value': i} for i in list(e_set.County.unique()) if i != 0
             							],key=itemgetter('value')),
-            					placeholder="Select County",
+            					placeholder="All Selected",
         						#value = "West Yorkshire",
                                 multi = True
         						)],
                     align = "center",
                     
-                    width = {'size':4}),
+                    width = {'size':3}),
                     
                     dbc.Col([
                     html.Label("Year-Quarter"),
@@ -600,7 +617,23 @@ def ScriptMain():
                         )],
                     align = "center",
                     
-                    width={"size": 4})],
+                    width={"size": 3}),
+                    
+                                        dbc.Col([
+                    html.Label("Preferred Only?"),
+        			dcc.Slider(
+                            id = 'pre',
+                            min=0,
+                            max=1,
+                            step=None,
+                            marks={
+                                    0 : 'Preferred',
+                                    1 : 'All'},
+                            value=1
+                        )],
+                    align = "center",
+                    
+                    width={"size": 2})],
                     justify = 'around',
                     style = {'padding':30}),
                             
@@ -620,8 +653,15 @@ def ScriptMain():
                     ],justify = 'start'),
                     
            dbc.Row([
-                    dbc.Col([html.H2("Subcontractor List",style={'textAlign':'center'}),dataTable3],width=6,align="center"),
-                    dbc.Col([html.H2('Contact Details',style={'textAlign':'center'}),dataTable4],width=4,align='start'),
+                    dbc.Col([html.H2("Subcontractor List",style={'textAlign':'center'}),
+                             html.A(
+                                    'Download Data',
+                                    id='download-link',
+                                    download="rawdata.csv",
+                                    href="",
+                                    target="_blank"),
+                            dataTable3],
+                    width=10,align="center"),
                     ],
                     
                     justify = "center",
@@ -1449,10 +1489,11 @@ def ScriptMain():
      Input('Marketp','value'),
      Input('posp','value'),
      Input('coup','value'),
-     Input('yqp','value')])
+     Input('yqp','value'),
+     Input('pre','value')])
                 
     
-    def update_tab3(trade,OU,market,pos,cou,yq):
+    def update_tab3(trade,OU,market,pos,cou,yq,pre):
         if pos ==[]:
             raise PreventUpdate
             
@@ -1520,11 +1561,23 @@ def ScriptMain():
         df = df[df.YQ.isin(m)]
         
         conts = list(df.Contractor.unique())
-        df2 = e_set[e_set.Contractor.isin(conts)]
         
-        df2 = df2.groupby("Contractor",as_index=False).agg({'Enquiry_Sent': "count","Price_Returned":"sum","First":"sum","Top_three":"sum"})
+        if pre == 1:
+            conts_final = conts
+        else:
+            conts_final = [x for x in conts if x in pref]
+            
+        df2 = e_set[e_set.Contractor.isin(conts_final)]
+        
+        df2 = df2.groupby(["Contractor","Trade"],as_index=False).agg({'Enquiry_Sent': "count","Price_Returned":"sum","First":"sum","Top_three":"sum"})
         df2["% Return Rate"] = round((df2['Price_Returned']/df2['Enquiry_Sent'])*100,0)
         df2["% KPI Score"] = round(((df2["% Return Rate"]*0.67) + ((df2["First"]/df2["Price_Returned"])*0.198) + ((df2["Top_three"]/df2["Price_Returned"])*0.122))/(0.868),0)
+        df2["% KPI Score"] = df2["% KPI Score"].fillna(0)
+        df2['% Return Rate'] = ["{:.0%}".format((x/100)) for x in list(df2['% Return Rate'])]
+        df2['% KPI Score'] = ["{:.0%}".format(x/100) for x in list(df2['% KPI Score'])]
+        df2['Contact Details'] = ''
+        for i in range(0,len(df2)):
+            df2['Contact Details'][i] = dff.loc[dff['Contractor']==df2['Contractor'][i],'Details']
         data = df2.to_dict('records')
         
         return data
@@ -1792,50 +1845,20 @@ def ScriptMain():
             return values
         
     @app.callback(
-    Output('contact', 'data'),
-    [Input('tab3', "derived_virtual_data"),
-     Input('tab3', "derived_virtual_selected_rows")],
-     [State('tab3', 'data')])
-    
-    def contact_details(rows,derived_virtual_selected_rows,data):
-        
-        if rows is None:
-            raise PreventUpdate
-            
-        if derived_virtual_selected_rows is None:
-            raise PreventUpdate
-            
-        if data is None:
-            raise PreventUpdate
-            
-        df = pd.DataFrame(rows)
-        
-        if len(df) < 1:
-            raise PreventUpdate
-            
-        cons = list(df.iloc[derived_virtual_selected_rows,2])
-        deets = []
-        for i in range(0,len(cons)):
-            if cons[i] in list(g['Name']):
-                deets.append(list(g[g["Name"]==cons[i]][0]))
-            else:
-                deets.append("No Matching Details")
-        
-        dff = pd.DataFrame({'Contractor':cons,'Details':deets})
-                
-        return(dff.to_dict('records'))
-        
-    @app.callback(
     Output('trade choice', 'value'),
-    [Input('select-all-tr', 'value')],
+    [Input('select-all-tr', 'value'),
+     Input('trade choicep', 'value')],
      [State('trade choice', 'value')])
 
-    def select_key_trades(selected, values):
+    def select_key_trades(selected, copy, values):
         
         if selected is None:
             raise PreventUpdate
+            
+        elif selected == 'same':
+            return copy
         
-        if selected == 'keytr':
+        elif selected == 'keytr':
             return ['***D_SC Bulk Excavation','***D_SC Groundworker','***E_SC PCC Floors',
                     'G_SC Structural Steelwork','***M_SC Screeding','***F_LO Brickwork',
                     '***G_QM Timber Upper Floors','***G_LO Joinery','***L_QM Stairs-Timber',
@@ -1845,6 +1868,31 @@ def ScriptMain():
                     '***Q_SC Fencing (Timber)','***Q_SC Fencing (Metal)']
         
         elif selected == 'settr':
+            return ['***F_LO Brickwork']
+        
+        else:
+            return values
+        
+    @app.callback(
+    Output('trade choicep', 'value'),
+    [Input('select-all-trp', 'value')],
+    [State('trade choicep', 'value')])
+
+    def select_key_tradesp(selected, values):
+        
+        if selected is None:
+            raise PreventUpdate
+            
+        elif selected == 'keytrp':
+            return ['***D_SC Bulk Excavation','***D_SC Groundworker','***E_SC PCC Floors',
+                    'G_SC Structural Steelwork','***M_SC Screeding','***F_LO Brickwork',
+                    '***G_QM Timber Upper Floors','***G_LO Joinery','***L_QM Stairs-Timber',
+                    '***G_QM Roof Trusses','***H_SC Roofing Slate & Tile','***P_SC Insulation',
+                    '***L_SC PVC Windows','***R_SC Plumbing','***Y_SC Electrical',
+                    '***M_SC Plastering','***M_SC Painting&Decorating','***Q_SC Landscaping',
+                    '***Q_SC Fencing (Timber)','***Q_SC Fencing (Metal)']
+        
+        elif selected == 'settrp':
             return ['***F_LO Brickwork']
         
         else:
@@ -1955,6 +2003,18 @@ def ScriptMain():
             fig.layout.clickmode = "event+select"
                 
         return(fig)
+        
+    @app.callback(
+    dash.dependencies.Output('download-link', 'href'),
+    [dash.dependencies.Input('tab3', 'data')])
+    
+    def update_download_link(data):
+        dff = pd.DataFrame(data)
+        csv_string = dff.to_csv(index=False, encoding='utf-8')
+        csv_string = "data:text/csv;charset=utf-8,%EF%BB%BF" + quote(csv_string)
+    
+        return csv_string
+
         
             
     if __name__ == '__main__':
