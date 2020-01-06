@@ -20,6 +20,9 @@ import datetime
 from operator import itemgetter
 from collections import Counter
 from six.moves.urllib.parse import quote
+from re import sub
+
+
 
 
 url1 = 'https://raw.githubusercontent.com/walkerdj1995/flying-dog-beers/master/Data%20Sets/esetOct19.csv'
@@ -50,7 +53,37 @@ e_set['YQ'] = e_set['YQ'].astype(str)
 e_set['YQ'] = e_set['YQ'].replace('nan', '2000 - 1')
 
 e_vis['Date Created'] = pd.to_datetime(e_vis['Date Created'])
-e_vis.dropna(subset=['Date Created', ' Order Cost','Level 1 & 2'],inplace = True)
+
+evisnames = ['Date_Created','Created_By','Signed_Date','Signed_User','Unit','E_Vis_Ref',
+             'Job_Name','Tender_Type_Gr','Tender_Type','Trade','Contractor','County',
+             'Post Code','GLO','Payment_Terms','Est_Budget','Order_Cost','Buying_Gain',
+             'Pay_Ret','Diff2','Var_Rec','Var_UnRec','Balance']
+
+e_vis.columns = evisnames
+
+e_vis.dropna(subset=['Date_Created', 'Order_Cost','Tender_Type'],inplace = True)
+
+e_vis['County'] = e_vis['County'].astype(str)
+e_vis['Plots'] = [0]*len(e_vis)
+e_vis['GIFA'] = [0]*len(e_vis)
+e_vis['Cost_Plot'] = [0]*len(e_vis)
+e_vis['Cost_M2'] = [0]*len(e_vis)
+e_vis['Enquiry_Sent'] = [1]*len(e_vis)
+
+a = list(e_set.E_Vis_Ref.unique())
+b = list(e_vis.E_Vis_Ref.unique())
+c = list(set(a)&set(b))
+
+for item in c:
+    plts = e_set.loc[e_set.E_Vis_Ref == item].Plots.iloc[0]
+    gifa = e_set.loc[e_set.E_Vis_Ref == item].GIFA.iloc[0]
+    e_vis.loc[e_vis.E_Vis_Ref == item,'Plots'] = plts
+    e_vis.loc[e_vis.E_Vis_Ref == item,'GIFA'] = gifa
+    e_vis.loc[e_vis.E_Vis_Ref == item,'Cost_Plot'] = e_vis.loc[e_vis.E_Vis_Ref == item,'Order_Cost']/plts
+    e_vis.loc[e_vis.E_Vis_Ref == item,'Cost_M2'] = e_vis.loc[e_vis.E_Vis_Ref == item,'Order_Cost']/gifa
+    
+#e_vis['Cost_Plot'] = pd.to_numeric(e_vis['Cost_Plot'])
+    
 
 x = 0
 
@@ -79,7 +112,7 @@ dff = pd.DataFrame({'Contractor':cons,'Details':deets})
     
 #Create preferred list
     
-All = list(e_vis['Subcontractor Name'])
+All = list(e_vis['Contractor'])
 cnt = Counter(All)
 pref =  [k for k, v in cnt.items() if v > 2]
 
@@ -94,7 +127,7 @@ def ScriptMain():
     dataTable1 = dt.DataTable(
         id='datatable-interactivity',
         columns=[{'id': c, 'name': c} for c in ["Trade","Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']],
-        sort_action='native',
+        #sort_action='native',
         editable = True,
         style_data_conditional=[
         {
@@ -140,9 +173,14 @@ def ScriptMain():
     ],
     style_header={
         'backgroundColor': 'rgb(230, 230, 230)',
+        'height':'70px',
         'fontWeight': 'bold'
     },
-    style_cell={"textAlign":'end'},
+    style_cell={"textAlign":'center',
+                'font_size':'18px',
+                'whiteSpace': 'normal',
+                'maxWidth': '165px',
+                'height':'70px'},
     )
 
         
@@ -150,7 +188,7 @@ def ScriptMain():
     dataTable2 = dt.DataTable(
         id='tab2',
         columns=[{'id': c, 'name': c} for c in ["Trade","Quoted Cost/M2","Quoted Cost/Plot",'Flag Cost/M2','Flag Cost/Plot']],
-        sort_action='native',
+        #sort_action='native',
         style_data_conditional=[
         {
             'if': {'row_index': 'odd'},
@@ -251,9 +289,14 @@ def ScriptMain():
     ],
     style_header={
         'backgroundColor': 'rgb(230, 230, 230)',
+        'height':'70px',
         'fontWeight': 'bold'
     },
-    style_cell={"textAlign":'center'},
+    style_cell={"textAlign":'center',
+                'font_size':'18px',
+                'whiteSpace': 'normal',
+                'maxWidth': '165px',
+                'height':'70px'},
     )
     
     dataTable3 = dt.DataTable(
@@ -282,6 +325,62 @@ def ScriptMain():
         'overflowY': 'scroll'
     },
     )
+    
+    dataTable4 = dt.DataTable(
+        id='tab4',
+        columns=[{'id': c, 'name': c} for c in list(e_set.columns)],
+        #fixed_rows={'headers': True, 'data': 0 },
+        sort_action='native',
+        filter_action="native",
+        row_selectable="multi",
+        style_data_conditional=[
+        {
+            'if': {'row_index': 'odd'},
+            'backgroundColor': 'rgb(248, 248, 248)'
+        }
+    ],
+    style_header={
+        'backgroundColor': '#8ebcff',
+        'fontWeight': 'bold'
+    },
+    style_table={
+        'maxHeight': '1000px',
+        'overflowY': 'scroll'
+    },
+    style_cell={"textAlign":'center',
+                'font_size':'18px',
+                'whiteSpace':'normal'},
+    
+    )
+    
+# =============================================================================
+#     dataTable5 = dt.DataTable(
+#         id='tab5',
+#         columns=[{'id': c, 'name': c} for c in list(e_set.columns)],
+#         #fixed_rows={'headers': True, 'data': 0 },
+#         sort_action='native',
+#         filter_action="native",
+#         row_selectable="multi",
+#         style_data_conditional=[
+#         {
+#             'if': {'row_index': 'odd'},
+#             'backgroundColor': 'rgb(248, 248, 248)'
+#         }
+#     ],
+#     style_header={
+#         'backgroundColor': '#8ebcff',
+#         'fontWeight': 'bold'
+#     },
+#     style_cell={"textAlign":'center',
+#                 'font_size':'18px',
+#                 'whiteSpace': 'normal'},
+#     
+#     style_table={
+#         'maxHeight': '1000px',
+#         'overflowY': 'scroll'
+#     },
+#     )
+# =============================================================================
     
 # =============================================================================
 #     vistable = dt.DataTable(
@@ -339,7 +438,7 @@ def ScriptMain():
                					{'label': i, 'value': i} for i in list(e_set.Trade.unique()) if i != 0
             						],key=itemgetter('value')),
             					placeholder="Select Other Trades",
-        						value = "***F_LO Brickwork",
+        						#value = "***F_LO Brickwork",
                                 multi=True
         						),
                     dcc.RadioItems(id='select-all-tr',
@@ -412,7 +511,7 @@ def ScriptMain():
                             value = 'same')],
                      align = "center",
                     
-                    width = {'size':4}),
+                    width = {'size':3}),
                     
                     dbc.Col([
                     html.Label("County"),
@@ -431,7 +530,7 @@ def ScriptMain():
                             value = 'same')],
                     align = "center",
                     
-                    width = {'size':4}),
+                    width = {'size':3}),
                     
                     dbc.Col([
                     html.Label("Year-Quarter"),
@@ -448,7 +547,25 @@ def ScriptMain():
                         )],
                     align = "center",
                     
-                    width={"size": 4})],
+                    width={"size": 2}),
+                            
+                    dbc.Col([
+                    html.Label("Data Set"),
+        			dcc.Slider(
+                            id = 'ds',
+                            min=0,
+                            max=2,
+                            step=None,
+                            marks={
+                                    0 : 'ESET',
+                                    1 : 'BOTH',
+                                    2 : 'EVISION'},
+                            value=0
+                        )],
+                    align = "center",
+                    
+                    width={"size": 2}),        
+                    ],
                     justify = 'around',
                     style = {'padding':30}),
                            
@@ -464,10 +581,23 @@ def ScriptMain():
                             ),
                     
              dbc.Row([
+                     html.A(
+                             'Download Data',
+                             id='download-link2',
+                             download="rawdata.csv",
+                             href="",
+                             target="_blank")
+                     ],
+             justify = 'around',
+                    style = {'padding':30}
+                    ),
+                     
+             dbc.Row([
                     dbc.Col([html.H2("Summary of Costs",style={'textAlign':'center'}),dataTable1],width=7),
                     dbc.Col([html.H2("Comparison Table",style={'textAlign':'center'}),dataTable2],width=5) 
                     
                     ],
+             
                     
                     align = 'start',
                     justify = 'around',
@@ -660,7 +790,9 @@ def ScriptMain():
                                     download="rawdata.csv",
                                     href="",
                                     target="_blank"),
-                            dataTable3],
+                            dataTable3,
+                            html.H2("Source Data",style={'textAlign':'center'}),
+                            dataTable4],
                     width=10,align="center"),
                     ],
                     
@@ -994,29 +1126,37 @@ def ScriptMain():
      Input('cou','value'),
      Input('yq','value'),
      Input('jobplot', "selectedData"),
-     Input('Rem','value')],
+     Input('Rem','value'),
+     Input('ds','value')],
      [State('datatable-interactivity','data')])
 
-    def update_memory(trade,OU,market,pos,cou,yq,rows,rem,inp):#,derived_virtual_selected_rows,data):
+    def update_memory(trade,OU,market,pos,cou,yq,rows,rem,ds,inp):#,derived_virtual_selected_rows,data):
+        
+        if ds == 0:
+            data = e_set
+        elif ds == 1:
+            data = e_set
+        else:
+            data = e_vis
         
         if type(trade) == str:
             trade = [trade]
         elif trade is None or trade == []:
-             trade = list(e_set.Trade.unique())
+             trade = list(data.Trade.unique())
         else:
             trade = trade
         
         if type(OU) == str:
             OU = [OU]
         elif OU is None or OU == []:
-             OU = list(e_set.Unit.unique())
+             OU = list(data.Unit.unique())
         else:
             OU = OU
             
         if type(market) == str:
             market = [market]
         elif market is None or market ==[]:
-             market = list(e_set.Tender_Type.unique())
+             market = list(data.Tender_Type.unique())
         else:
             market = market
             
@@ -1030,9 +1170,11 @@ def ScriptMain():
         if type(cou) == str:
             cou = [cou]
         elif cou is None or cou == []:
-             cou = list(e_set.County.unique())
+             cou = list(data.County.unique())
         else:
             cou = cou
+            
+        #print([trade,OU,market,pos,cou])
             
         srtd = sorted(e_set['YQ'].unique(), key=lambda x: datetime.datetime.strptime(x, '%Y - %m'))
         
@@ -1045,15 +1187,24 @@ def ScriptMain():
             
         if rows is None:
             rows={'points':[]}
-            
-        df = e_set[e_set.Trade.isin(trade)]
+             
+        df = data[data.Trade.isin(trade)]
+        #df = e_set[e_set.Trade.isin(trade)]
         df = df[df.Unit.isin(OU)]
         df = df[df.Tender_Type.isin(market)]
-        df = df[df.Position.isin(pos)]
         df = df[df.County.isin(cou)]
-        df = df[df.YQ.isin(m)]
+        
+        if ds == 0 or ds == 1:
+            df = df[df.YQ.isin(m)]
+            df = df[df.Position.isin(pos)]
+        else:
+            df = df
         
         df = df.reset_index(drop=True)
+        
+        print(df)
+        
+        # Remove outliers
         
         def q1(x):
             return x.quantile(0.25)
@@ -1084,6 +1235,8 @@ def ScriptMain():
             
         else:
             df_fin = df
+            
+        #print(df_fin)
         
         p = []
         x = rows.get('points')
@@ -1103,8 +1256,8 @@ def ScriptMain():
 #             jobs = u.iloc[derived_virtual_selected_rows,0]
 #             df2 = df[~df['E_Vis_Ref'].isin(jobs)]
 # =============================================================================
-
-        #df = df[df.Position != 0]
+        df_fin = df_fin.loc[df_fin['Cost_M2'] != 0]
+        print(df_fin)
         df2 = df_fin.groupby("Trade",as_index=False).agg({'Enquiry_Sent':'count','Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
         if inp is None:
             vals = [0]*len(df2)
@@ -1119,7 +1272,7 @@ def ScriptMain():
             
         df2["Input Value"] = vals
         df2.columns  = ["Trade","Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']
-        df2 = df2.round(0)  
+        #df2 = df2.round(0)  
         
         dat = df2.to_dict('records')
         return(dat)
@@ -1135,6 +1288,14 @@ def ScriptMain():
         for i in range(0,len(t)):
             if pd.isnull(t["Input Value"][i]):
                 t["Input Value"][i] = 0
+        
+        t['Min Cost/M2(£)'] = ["£{:0,.2f}".format(x) for x in list(t['Min Cost/M2(£)'])]
+        t['Mean Cost/M2(£)'] = ["£{:0,.2f}".format(x) for x in list(t['Mean Cost/M2(£)'])]
+        t['Max Cost/M2(£)'] = ["£{:0,.2f}".format(x) for x in list(t['Max Cost/M2(£)'])]
+        t['Min Cost/Plot(£)'] = ["£{:0,.0f}".format(x) for x in list(t['Min Cost/Plot(£)'])]
+        t['Mean Cost/Plot(£)'] = ["£{:0,.0f}".format(x) for x in list(t['Mean Cost/Plot(£)'])]
+        t['Max Cost/Plot(£)'] = ["£{:0,.0f}".format(x) for x in list(t['Max Cost/Plot(£)'])]
+        
                 
         dat = t.to_dict('records')
         
@@ -1173,6 +1334,14 @@ def ScriptMain():
         for i in range(0,len(df)):
             if df['Input Value'][i] == "":
                 raise PreventUpdate
+                
+        df['Min Cost/M2(£)'] = [float(sub(r'[^\d.]', '',x)) for x in list(df['Min Cost/M2(£)'])]
+        df['Mean Cost/M2(£)'] = [float(sub(r'[^\d.]', '',x)) for x in list(df['Mean Cost/M2(£)'])]
+        df['Max Cost/M2(£)'] = [float(sub(r'[^\d.]', '',x)) for x in list(df['Max Cost/M2(£)'])]
+        df['Min Cost/Plot(£)'] = [float(sub(r'[^\d.]', '',x)) for x in list(df['Min Cost/Plot(£)'])]
+        df['Mean Cost/Plot(£)'] = [float(sub(r'[^\d.]', '',x)) for x in list(df['Mean Cost/Plot(£)'])]
+        df['Max Cost/Plot(£)'] = [float(sub(r'[^\d.]', '',x)) for x in list(df['Max Cost/Plot(£)'])]
+        
         
         qm = [float(item)/(gifa) for item in list(df['Input Value'])]
         qp = [float(item)/(plots) for item in list(df['Input Value'])]
@@ -1213,6 +1382,9 @@ def ScriptMain():
         df1['Flag Cost/M2'] = flag
         
         df1['Flag Cost/Plot'] = flag2
+        
+        #df1['Quoted Cost/M2'] = ["£{:0,.2f}".format(x) for x in list(df1['Quoted Cost/M2'].astype(float))]
+        #df1['Quoted Cost/Plot'] = ["£{:0,.0f}".format(x) for x in list(df1['Quoted Cost/M2'].astype(float))]
         
         data = df1.to_dict('records')
         
@@ -2015,7 +2187,83 @@ def ScriptMain():
     
         return csv_string
 
+    @app.callback(
+    dash.dependencies.Output('download-link2', 'href'),
+    [dash.dependencies.Input('datatable-interactivity', 'data'),
+     dash.dependencies.Input('tab2', 'data')])
+    
+    def update_download_link2(data,comp_data):
+        df1 = pd.DataFrame(data)
+        df2 = pd.DataFrame(comp_data)
         
+        if len(df1) != len(df2):
+            raise PreventUpdate
+            
+        dff = pd.merge(df1,df2,on='Trade')
+        csv_string = dff.to_csv(index=False, encoding='utf-8')
+        csv_string = "data:text/csv;charset=utf-8,%EF%BB%BF" + quote(csv_string)
+    
+        return csv_string
+    
+    @app.callback(
+    Output('tab4', 'data'),
+    [Input('tab3', "derived_virtual_data"),
+     Input('tab3', "derived_virtual_selected_rows")])
+    
+    def kpi_source_data(rows, derived_virtual_selected_rows):
+        
+        if derived_virtual_selected_rows is None:
+            derived_virtual_selected_rows = []
+            
+        if rows is None:
+            rows = []
+            
+        df = pd.DataFrame(rows)
+        dff = df.iloc[derived_virtual_selected_rows,:]
+        
+        if len(dff)==0:
+            Conts = []
+        else:
+            Conts = list(dff['Contractor'].unique())
+         
+        df_fin = e_set.loc[e_set.Contractor.isin(Conts)]
+        
+        data = df_fin.to_dict('records')
+
+    
+        return(data)
+        
+        
+    @app.callback(
+    [Output('trade choice','options'),
+     Output('OU','options'),
+     Output('Market','options'),
+     Output('pos','options'),
+     Output('cou','options')],
+    [Input('ds','value')])
+
+    def update_filter_vals(dataset):
+        if dataset == 0:
+            return([sorted([{'label': i, 'value': i} for i in list(e_set.Trade.unique()) if i != 0],key=itemgetter('value')),
+                    sorted([{'label': i, 'value': i} for i in list(e_set.Unit.unique()) if i != 0],key=itemgetter('value')),
+                    sorted([{'label': i, 'value': i} for i in list(e_set.Tender_Type.unique()) if i != 0],key=itemgetter('value')),
+                    sorted([{'label': i, 'value': i} for i in list(e_set.Position.unique()) if i != 0],key=itemgetter('value')),
+                    sorted([{'label': i, 'value': i} for i in list(e_set.County.unique()) if i != 0],key=itemgetter('value')),
+                    ])
+        if dataset == 1:
+            return([sorted([{'label': i, 'value': i} for i in list(e_set.Trade.unique()) if i != 0],key=itemgetter('value')),
+                    sorted([{'label': i, 'value': i} for i in list(e_set.Unit.unique()) if i != 0],key=itemgetter('value')),
+                    sorted([{'label': i, 'value': i} for i in list(e_set.Tender_Type.unique()) if i != 0],key=itemgetter('value')),
+                    sorted([{'label': i, 'value': i} for i in list(e_set.Position.unique()) if i != 0],key=itemgetter('value')),
+                    sorted([{'label': i, 'value': i} for i in list(e_set.County.unique()) if i != 0],key=itemgetter('value')),
+                    ])
+        if dataset == 2:
+            return([sorted([{'label': i, 'value': i} for i in list(e_vis.Trade.unique()) if i != 0],key=itemgetter('value')),
+                    sorted([{'label': i, 'value': i} for i in list(e_vis.Unit.unique()) if i != 0],key=itemgetter('value')),
+                    sorted([{'label': i, 'value': i} for i in list(e_vis.Tender_Type.unique()) if i != 0],key=itemgetter('value')),
+                    [{'label': i, 'value': i,'disabled':True} for i in ['0']],
+                    [{'label': i, 'value': i,'disabled':True} for i in ['0']]
+                    ])
             
     if __name__ == '__main__':
         app.run_server(debug=True)
