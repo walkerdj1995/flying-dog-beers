@@ -179,7 +179,7 @@ def ScriptMain():
     style_cell={"textAlign":'center',
                 'font_size':'18px',
                 'whiteSpace': 'normal',
-                'maxWidth': '140px',
+                'maxWidth': '165px',
                 'height':'70px'},
     )
 
@@ -295,7 +295,7 @@ def ScriptMain():
     style_cell={"textAlign":'center',
                 'font_size':'18px',
                 'whiteSpace': 'normal',
-                'maxWidth': '140px',
+                'maxWidth': '165px',
                 'height':'70px'},
     )
     
