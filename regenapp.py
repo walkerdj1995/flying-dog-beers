@@ -14,7 +14,7 @@ import dash_table as dt
 import dash_bootstrap_components as dbc
 from dash.dependencies import Input, Output, State
 import plotly.express as px
-#import plotly.graph_objects as go
+import plotly.graph_objects as go
 from dash.exceptions import PreventUpdate
 import datetime
 from operator import itemgetter
