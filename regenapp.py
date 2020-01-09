@@ -128,6 +128,7 @@ def ScriptMain():
         id='datatable-interactivity',
         columns=[{'id': c, 'name': c} for c in ["Trade","Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']],
         #sort_action='native',
+        row_selectable="multi",
         editable = True,
         style_data_conditional=[
         {
@@ -189,6 +190,7 @@ def ScriptMain():
         id='tab2',
         columns=[{'id': c, 'name': c} for c in ["Trade","Quoted Cost/M2","Quoted Cost/Plot",'Flag Cost/M2','Flag Cost/Plot']],
         #sort_action='native',
+        #row_selectable="multi",
         style_data_conditional=[
         {
             'if': {'row_index': 'odd'},
@@ -353,6 +355,33 @@ def ScriptMain():
     
     )
     
+    dataTable5 = dt.DataTable(
+    id='tab5',
+    #columns=[{'id': c, 'name': c} for c in list(e_set.columns)],
+    #fixed_rows={'headers': True, 'data': 0 },
+    sort_action='native',
+    filter_action="native",
+    #row_selectable="multi",
+    style_data_conditional=[
+    {
+        'if': {'row_index': 'odd'},
+        'backgroundColor': 'rgb(248, 248, 248)'
+    }
+    ],
+    style_header={
+        'backgroundColor': '#8ebcff',
+        'fontWeight': 'bold'
+    },
+    style_table={
+        'maxHeight': '1000px',
+        'overflowY': 'scroll'
+    },
+    style_cell={"textAlign":'center',
+                'font_size':'18px',
+                'whiteSpace':'normal'},
+    
+    )
+    
 # =============================================================================
 #     dataTable5 = dt.DataTable(
 #         id='tab5',
@@ -410,23 +439,16 @@ def ScriptMain():
     'padding': '6px'
 }
 
-    
-# =============================================================================
-#     dataTable5 = dt.DataTable(
-#         id='joblist',
-#         columns=[{'id': c, 'name': c} for c in ["E_Vis_Ref","Estimator"]],
-#         row_selectable="multi",
-#         style_header={
-#         'backgroundColor': '#8ebcff',
-#         'fontWeight': 'bold'
-#     },
-#     )
-# =============================================================================
+
 
     # Home layout.
     layoutHome = html.Div([
             
             dcc.Store(id = 'memory'),
+            dcc.ConfirmDialog(
+                            id='confirm',
+                            message='Enter GIFA / Plots as integer',
+                            ),
             
 			# Add dashbaord header/title.            
              dbc.Row([
@@ -579,22 +601,15 @@ def ScriptMain():
                     justify = "around",
                     style = {'padding':30}
                             ),
-                    
-             dbc.Row([
-                     html.A(
-                             'Download Data',
-                             id='download-link2',
-                             download="rawdata.csv",
-                             href="",
-                             target="_blank")
-                     ],
-             justify = 'around',
-                    style = {'padding':30}
-                    ),
                      
              dbc.Row([
-                    dbc.Col([html.H2("Summary of Costs",style={'textAlign':'center'}),dataTable1],width=7),
-                    dbc.Col([html.H2("Comparison Table",style={'textAlign':'center'}),dataTable2],width=5) 
+                    dbc.Col([html.H2("Summary of Costs",style={'textAlign':'center'}),
+                             html.A('Download Data',id='download-link1',download="rawdata.csv",href="",target="_blank"),
+                             dataTable1],width=7),
+             
+                    dbc.Col([html.H2("Comparison Table",style={'textAlign':'center'}),
+                             html.A('a',id='null',download="rawdata.csv",href="",target="_blank"),
+                             dataTable2],width=5) 
                     
                     ],
              
@@ -604,6 +619,7 @@ def ScriptMain():
                     style = {'padding':30}
                             ),
              dcc.Store(id='intermediate-value'),
+             dcc.Store(id='hidden-value'),
                      
                      
 # =============================================================================
@@ -621,6 +637,12 @@ def ScriptMain():
                                              value = 'kee'),
                             dcc.Graph(id = 'jobplot')
                               ],width=12)]
+            ),
+                              
+            dbc.Row([
+                     dbc.Col([html.H2('Financial Source Data',style={'textAlign':'center'}),
+                               html.A('Download Data',id='download-link4',download="sourcedata.csv",href="",target="_blank"),
+                              dataTable5],width=12)]
             )
                      
                     
@@ -786,12 +808,18 @@ def ScriptMain():
                     dbc.Col([html.H2("Subcontractor List",style={'textAlign':'center'}),
                              html.A(
                                     'Download Data',
-                                    id='download-link',
+                                    id='download-link2',
                                     download="rawdata.csv",
                                     href="",
                                     target="_blank"),
                             dataTable3,
                             html.H2("Source Data",style={'textAlign':'center'}),
+                            html.A(
+                                    'Download Source Data',
+                                    id='download-link3',
+                                    download="sourcedata.csv",
+                                    href="",
+                                    target="_blank"),
                             dataTable4],
                     width=10,align="center"),
                     ],
@@ -1118,7 +1146,7 @@ def ScriptMain():
     ])
         
     @app.callback(
-    Output('memory', 'data'),
+    [Output('memory', 'data'),Output('hidden-value','data')],
     [Input('trade choice','value'),
      Input('OU','value'),
      Input('Market','value'),
@@ -1132,6 +1160,7 @@ def ScriptMain():
 
     def update_memory(trade,OU,market,pos,cou,yq,rows,rem,ds,inp):#,derived_virtual_selected_rows,data):
         
+        ################################ Get Correct Data Set#####################################
         if ds == 0:
             data = e_set
         elif ds == 1:
@@ -1174,8 +1203,6 @@ def ScriptMain():
         else:
             cou = cou
             
-        #print([trade,OU,market,pos,cou])
-            
         srtd = sorted(e_set['YQ'].unique(), key=lambda x: datetime.datetime.strptime(x, '%Y - %m'))
         
         if yq == 0:
@@ -1202,9 +1229,9 @@ def ScriptMain():
         
         df = df.reset_index(drop=True)
         
-        print(df)
+        #############################################################################################
         
-        # Remove outliers
+        ############################### Remove Outliers #############################################
         
         def q1(x):
             return x.quantile(0.25)
@@ -1246,6 +1273,8 @@ def ScriptMain():
             
         for item in p:
             df_fin = df_fin[df_fin["Cost_M2"] != item]
+            
+        ##############################################################################################
         #df2 = pd.concat([df,u]).drop_duplicates(keep=False)
         
 # =============================================================================
@@ -1256,34 +1285,43 @@ def ScriptMain():
 #             jobs = u.iloc[derived_virtual_selected_rows,0]
 #             df2 = df[~df['E_Vis_Ref'].isin(jobs)]
 # =============================================================================
+        ####################################### Group and Summarise #################################
+        
         df_fin = df_fin.loc[df_fin['Cost_M2'] != 0]
-        print(df_fin)
+        df_source = df_fin.copy()
         df2 = df_fin.groupby("Trade",as_index=False).agg({'Enquiry_Sent':'count','Cost_M2': {"Minimum":'min','Average':'mean','Maximum':'max'},'Cost_Plot':{"Minimum":'min','Average':'mean','Maximum':'max'}})
         if inp is None:
             vals = [0]*len(df2)
         else:
             cur = pd.DataFrame(inp)
-            vals = cur["Input Value"]
-            for i in range(0,len(vals)):
-                if pd.isnull(vals[i]) == True:
-                    vals[i] = 0
-                else:
-                    vals[i] = vals[i]
+            vals = [0]*len(df2)
+            for i in range(0,len(df2)):
+                tr = str(df2.Trade[i])
+                val = list(cur.loc[cur.Trade == tr]['Input Value'])
+                if len(val)==0:
+                    val = [0]
+                print(val)
+                vals[i] = val[0]
+
             
         df2["Input Value"] = vals
         df2.columns  = ["Trade","Quotes","Min Cost/M2(£)","Mean Cost/M2(£)","Max Cost/M2(£)","Min Cost/Plot(£)","Mean Cost/Plot(£)","Max Cost/Plot(£)",'Input Value']
         #df2 = df2.round(0)  
-        
         dat = df2.to_dict('records')
-        return(dat)
+        sourcedat = df_source.to_dict('records')
         
-       
+        return([dat,sourcedat])
+        
+       ################################################################################################
         
     @app.callback(
     Output('datatable-interactivity', 'data'),
     [Input('memory', 'data')])
 
     def update_table(data):
+        if data is None:
+            raise PreventUpdate
+            
         t = pd.DataFrame(data)
         for i in range(0,len(t)):
             if pd.isnull(t["Input Value"][i]):
@@ -1304,15 +1342,14 @@ def ScriptMain():
     @app.callback(
     [Output('tab2', 'data'),
      Output('intermediate-value','data')],
-    [Input('memory', 'data'),
-     Input('datatable-interactivity', 'data_timestamp'),
+     [Input('datatable-interactivity', 'data_timestamp'),
      Input('gifa','value'),
      Input('plots','value'),
      Input('btn','n_clicks')],
     [State('datatable-interactivity', 'data'),
      State('intermediate-value','data')])
 
-    def update_table_2(mem,timestamp,gifa,plots,n_clicks,rows,x):
+    def update_table_2(timestamp,gifa,plots,n_clicks,rows,x):
         
         if rows is None:
             raise PreventUpdate
@@ -2177,7 +2214,7 @@ def ScriptMain():
         return(fig)
         
     @app.callback(
-    dash.dependencies.Output('download-link', 'href'),
+    dash.dependencies.Output('download-link2', 'href'),
     [dash.dependencies.Input('tab3', 'data')])
     
     def update_download_link(data):
@@ -2188,7 +2225,7 @@ def ScriptMain():
         return csv_string
 
     @app.callback(
-    dash.dependencies.Output('download-link2', 'href'),
+    dash.dependencies.Output('download-link1', 'href'),
     [dash.dependencies.Input('datatable-interactivity', 'data'),
      dash.dependencies.Input('tab2', 'data')])
     
@@ -2200,6 +2237,28 @@ def ScriptMain():
             raise PreventUpdate
             
         dff = pd.merge(df1,df2,on='Trade')
+        csv_string = dff.to_csv(index=False, encoding='utf-8')
+        csv_string = "data:text/csv;charset=utf-8,%EF%BB%BF" + quote(csv_string)
+    
+        return csv_string
+    
+    @app.callback(
+    dash.dependencies.Output('download-link3', 'href'),
+    [dash.dependencies.Input('tab4', 'data')])
+    
+    def download_kpisource_link(data):
+        dff = pd.DataFrame(data)
+        csv_string = dff.to_csv(index=False, encoding='utf-8')
+        csv_string = "data:text/csv;charset=utf-8,%EF%BB%BF" + quote(csv_string)
+    
+        return csv_string
+    
+    @app.callback(
+    dash.dependencies.Output('download-link4', 'href'),
+    [dash.dependencies.Input('tab5', 'data')])
+    
+    def download_fin_source_link(data):
+        dff = pd.DataFrame(data)
         csv_string = dff.to_csv(index=False, encoding='utf-8')
         csv_string = "data:text/csv;charset=utf-8,%EF%BB%BF" + quote(csv_string)
     
@@ -2264,6 +2323,64 @@ def ScriptMain():
                     [{'label': i, 'value': i,'disabled':True} for i in ['0']],
                     [{'label': i, 'value': i,'disabled':True} for i in ['0']]
                     ])
+        
+    @app.callback(
+    Output('confirm', 'displayed'),
+    [Input('btn', 'n_clicks')],
+    [State('gifa','value'),
+     State('plots','value')])
+    
+    
+    def display_confirm(n_clicks,gifa,plots):
+        if not n_clicks:
+            raise PreventUpdate
+            
+        if gifa == 0 or gifa is None:
+            return True
+        
+        elif plots == 0 or plots is None:
+            return True
+        
+        return False
+    
+    @app.callback(
+    [Output('tab5', 'data'),
+     Output('tab5', 'columns')],
+    [Input('datatable-interactivity', "derived_virtual_data"),
+     Input('datatable-interactivity', "derived_virtual_selected_rows"),
+     Input('ds','value'),
+     Input('hidden-value','data')])
+    
+    def fin_source_data(rows, derived_virtual_selected_rows,dataset,mem):
+        
+        if derived_virtual_selected_rows is None:
+            derived_virtual_selected_rows = []
+            
+        if rows is None:
+            rows = []
+            
+        if len(derived_virtual_selected_rows) == 0:
+            raise PreventUpdate
+            
+        if dataset == 2:
+            cols = [{'id': c, 'name': c} for c in list(e_vis.columns)]
+            
+        else:
+            cols = [{'id': c, 'name': c} for c in list(e_set.columns)]
+            
+        df_mem = pd.DataFrame(mem)
+        
+        df = pd.DataFrame(rows)
+        
+        dff = df.iloc[derived_virtual_selected_rows,:]
+        trds = list(dff.Trade.unique())
+        
+        print(trds)
+        
+        df_fin = df_mem.loc[df_mem.Trade.isin(trds)]
+            
+        return([df_fin.to_dict('records'),cols])
+            
             
     if __name__ == '__main__':
         app.run_server(debug=True)
