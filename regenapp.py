@@ -586,7 +586,7 @@ def ScriptMain():
                             max=2,
                             step=None,
                             marks={
-                                    0 : 'ESET',
+                                    0 : 'CONQUEST',
                                     1 : 'BOTH',
                                     2 : 'EVISION'},
                             value=0,
