@@ -311,7 +311,14 @@ def ScriptMain():
         style_data_conditional=[
         {
             'if': {'row_index': 'odd'},
-            'backgroundColor': 'rgb(248, 248, 248)'
+            'backgroundColor': 'rgb(248, 248, 248)',
+            
+        },
+                
+        {
+            'if': {'row_index': 0},
+            'backgroundColor': 'rgb(255, 255, 204)',
+            
         }
     ],
     style_header={
@@ -582,7 +589,8 @@ def ScriptMain():
                                     0 : 'ESET',
                                     1 : 'BOTH',
                                     2 : 'EVISION'},
-                            value=0
+                            value=0,
+                            disabled = True
                         )],
                     align = "center",
                     
@@ -1300,8 +1308,8 @@ def ScriptMain():
                 val = list(cur.loc[cur.Trade == tr]['Input Value'])
                 if len(val)==0:
                     val = [0]
-                print(val)
-                vals[i] = val[0]
+                    
+                vals[i] = val[0] #float(sub(r'[^\d.]', '',val[0]))
 
             
         df2["Input Value"] = vals
@@ -1333,6 +1341,7 @@ def ScriptMain():
         t['Min Cost/Plot(£)'] = ["£{:0,.0f}".format(x) for x in list(t['Min Cost/Plot(£)'])]
         t['Mean Cost/Plot(£)'] = ["£{:0,.0f}".format(x) for x in list(t['Mean Cost/Plot(£)'])]
         t['Max Cost/Plot(£)'] = ["£{:0,.0f}".format(x) for x in list(t['Max Cost/Plot(£)'])]
+        #t['Input Value'] = ["£{:0,.0f}".format(x) for x in list(t['Input Value'])]
         
                 
         dat = t.to_dict('records')
@@ -1383,6 +1392,8 @@ def ScriptMain():
         qm = [float(item)/(gifa) for item in list(df['Input Value'])]
         qp = [float(item)/(plots) for item in list(df['Input Value'])]
         
+        
+        
         df1 = pd.DataFrame({'Trade':df.Trade,'Quoted Cost/M2':qm,'Quoted Cost/Plot':qp,'Flag Cost/M2':[0]*len(df),'Flag Cost/Plot':[0]*len(df)})
         
         flag = []
@@ -1419,9 +1430,9 @@ def ScriptMain():
         df1['Flag Cost/M2'] = flag
         
         df1['Flag Cost/Plot'] = flag2
-        
-        #df1['Quoted Cost/M2'] = ["£{:0,.2f}".format(x) for x in list(df1['Quoted Cost/M2'].astype(float))]
-        #df1['Quoted Cost/Plot'] = ["£{:0,.0f}".format(x) for x in list(df1['Quoted Cost/M2'].astype(float))]
+                
+        df1['Quoted Cost/Plot'] = ["£{:0,.0f}".format(x) for x in list(df1['Quoted Cost/Plot'])]
+        df1['Quoted Cost/M2'] = ["£{:0,.2f}".format(x) for x in list(df1['Quoted Cost/M2'])]
         
         data = df1.to_dict('records')
         
@@ -1781,12 +1792,15 @@ def ScriptMain():
         df2 = df2.groupby(["Contractor","Trade"],as_index=False).agg({'Enquiry_Sent': "count","Price_Returned":"sum","First":"sum","Top_three":"sum"})
         df2["% Return Rate"] = round((df2['Price_Returned']/df2['Enquiry_Sent'])*100,0)
         df2["% KPI Score"] = round(((df2["% Return Rate"]*0.67) + ((df2["First"]/df2["Price_Returned"])*0.198) + ((df2["Top_three"]/df2["Price_Returned"])*0.122))/(0.868),0)
-        df2["% KPI Score"] = df2["% KPI Score"].fillna(0)
+        Totals = pd.DataFrame({'Contractor':'Total','Trade':'NA','Enquiry_Sent':sum(df2['Enquiry_Sent']),'Price_Returned':sum(df2['Price_Returned']),'% Return Rate':round((sum(df2['Price_Returned'])/sum(df2['Enquiry_Sent']))*100,0),'First':sum(df2['First']),'Top_three':sum(df2['Top_three']),'% KPI Score':0},index=[0])
+        Totals["% KPI Score"] = round(((Totals["% Return Rate"]*0.67) + ((Totals["First"]/Totals["Price_Returned"])*0.198) + ((Totals["Top_three"]/Totals["Price_Returned"])*0.122))/(0.868),0)
+        df2 = Totals.append(df2, ignore_index = True)
         df2['% Return Rate'] = ["{:.0%}".format((x/100)) for x in list(df2['% Return Rate'])]
         df2['% KPI Score'] = ["{:.0%}".format(x/100) for x in list(df2['% KPI Score'])]
         df2['Contact Details'] = ''
         for i in range(0,len(df2)):
             df2['Contact Details'][i] = dff.loc[dff['Contractor']==df2['Contractor'][i],'Details']
+        
         data = df2.to_dict('records')
         
         return data
